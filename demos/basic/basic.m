@@ -12,10 +12,11 @@ ndac = 8;			% num of D/A converters
 nadc = 8;			% num of A/D converters
 nsamp = 1024;		% num of samples
 fsamp = 983.04e6;	% sample frequency
-fc = 100e6;
+fc = 50e6;
 
 %% Create a Fully Digital SDR
 sdr0 = piradio.sdr.FullyDigital('ip', ip, 'mem', mem, 'isDebug', isDebug);
+sdr0.fpga.set('ndac', ndac, 'nadc', nadc);
 
 %% Configure the RFSoC
 sdr0.fpga.configure('../../config/rfsoc.cfg');
@@ -25,11 +26,11 @@ t = (0:nsamp-1)';
 
 txtd = zeros(nsamp, ndac);
 for idac = 1:ndac
-	txtd(:,idac) = sin(2*pi*t*fc/fsamp) + 1j*sin(2*pi*t*fc/fsamp);
+	txtd(:,idac) = sin(2*pi*t*idac*fc/fsamp)+1j*sin(2*pi*t*idac*fc/fsamp);
 end
 
 txtd = txtd./abs(max(txtd))*32767;
-%% Plot the tx data
+% Plot the tx data
 f = linspace(-fsamp/2, fsamp/2, nsamp);
 
 figure(1);
@@ -44,23 +45,6 @@ for idac = 1:ndac
 end
 
 %% Send the data to the DACs
-tmp = zeros(2, size(txtd,1), size(txtd,2));
-
-% Create the complex input data to int16
-tmp(1,:,:) = swapbytes(int16(imag(txtd)));
-tmp(2,:,:) = swapbytes(int16(real(txtd)));
-
-tmp = reshape(tmp,2*2,[],ndac);
-
-txtd = zeros(4, size(txtd,1)*size(txtd,2)/2);
-for idac = 1:ndac
-	txtd(:,idac:ndac:end) = reshape(tmp(:,:,idac),4,[]);
-end
-
-% flatten the time domain tx vector;
-txtd = reshape(txtd,[],1);
-
-% Send the data to the RFSoC
 sdr0.send(txtd);
 
 %% Receive data from the ADCs

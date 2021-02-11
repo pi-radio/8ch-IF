@@ -18,6 +18,8 @@ classdef RFSoC < matlab.System
     
     properties
 		ip;				% IP address
+		nadc;			% num of A/D converters
+		ndac;			% num of D/A converters
 		mem;			% mem type: 'bram' or 'dram'
 		sockData;		% data TCP connection
 		sockCtrl;		% ctrl TCP connection
@@ -49,7 +51,7 @@ classdef RFSoC < matlab.System
 		function data = recv(obj, nsamp)
 			obj.sendCmd(sprintf("SetLocalMemSample 0 0 0 %d", nsamp));
 			obj.sendCmd("LocalMemInfo 0");
-			obj.sendCmd(sprintf("LocalMemTrigger 0 4 %d 0x00FF", nsamp));
+			obj.sendCmd(sprintf("LocalMemTrigger 0 4 %d 0x0001", nsamp));
 			write(obj.sockData, sprintf("ReadDataFromMemory 0 0 %d 0\r\n", 2*nsamp));
 			pause(0.1);
 			data = read(obj.sockData, nsamp, 'int16');
@@ -61,21 +63,47 @@ classdef RFSoC < matlab.System
 			data = reshape(data,[],1); % return a column vector
 		end
 		
-		function send(obj, data)
-			nsamp = length(data);
+		function send(obj, txtd)
+			% First, we need to process the data from the DACs. The
+			% expected input to this function is a matrix with dimension 
+			% (nsamp x ndac)
+			
+			% Convert the complex input data to a tensor with int16 values
+			tmp = zeros(2, size(txtd,1), size(txtd,2));
+			tmp(1,:,:) = (int16(imag(txtd)));
+			tmp(2,:,:) = (int16(real(txtd)));
+
+			% Since the FPGA needs 2 samples of I/Q for every DAC we need
+			% to reshape the tensor
+			tmp = reshape(tmp,2*2,[],obj.ndac);
+			
+			% We interleave the data for every DAC
+			txtd = zeros(4, size(txtd,1)*size(txtd,2)/2);
+			for idac = 1:obj.ndac
+				txtd(:,idac:obj.ndac:end) = reshape(tmp(:,:,idac),4,[]);
+			end
+
+			% Finally, we flatten the tx vector;
+			txtd = reshape(txtd,[],1);
+
+			nsamp = length(txtd);	% num of samples
+			nbytes = 2*nsamp;		% num of bytes
+			
+			% Send the data over TCP with the necessary commans in the
+			% control channel
 			obj.sendCmd("LocalMemInfo 1");
 			obj.sendCmd(sprintf("LocalMemTrigger 1 0 0 0x0000"));
-			
-			write(obj.sockData, sprintf("WriteDataToMemory 0 0 %d 0\r\n", 2*nsamp));
-			write(obj.sockData, data, 'int16');
+			write(obj.sockData, sprintf("WriteDataToMemory 0 0 %d 0\r\n", nbytes));
+			write(obj.sockData, txtd, 'int16');
 			pause(0.1);
+
+			% Read response from the Data TCP Socket
 			rsp = read(obj.sockData);
 			if (obj.isDebug)
 				fprintf(1, "%s", rsp);
 			end
 			
 			obj.sendCmd(sprintf("SetLocalMemSample 1 0 0 %d", nsamp));
-			
 			obj.sendCmd("LocalMemTrigger 1 2 0 0x0001");
 			obj.sendCmd("LocalMemInfo 1");
 		end
@@ -86,10 +114,14 @@ classdef RFSoC < matlab.System
 			while ~feof(fid)
 				tline = fgetl(fid);
 				% The following lines parse a file generated from the 
-				% Windows RFDC application
+				% Xilinx RFDC Windows application:
+				%
 				% tmp = regexp(tline, '\t', 'split');
 				% fprintf(1, '%s\n',tmp{4})
 				% obj.sendCmd(tmp{4});
+				%
+				% However, we are going to parse a simplified version of
+				% the with only the necessary commands.
 				if (tline(1) ~= '%')
 					fprintf(1, '%s\n', tline);
 					obj.sendCmd(tline)
@@ -112,7 +144,8 @@ classdef RFSoC < matlab.System
 	
 	methods (Access = 'protected')
 		function connect(obj)
-			
+			% This function establishes communication between a host and
+			% an RFSoC device.
 			if (isempty(obj.sockData))
 				obj.sockData = tcpclient(obj.ip, 8082, "Timeout", 5);
 			end
@@ -124,6 +157,8 @@ classdef RFSoC < matlab.System
 		end
 		
 		function disconnect(obj)
+			% This function disbands communication sockets between a host
+			% and an RFSoC device.
 			if (~isempty(obj.sockData))
 				flush(obj.sockData);
 				clear obj.sockData;
