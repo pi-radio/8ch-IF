@@ -8,7 +8,7 @@
 % Description:
 %
 %
-% Date: Last update on Feb. 11, 2021
+% Date: Last update on Feb. 15, 2021
 %
 % Copyright @ 2021
 %
@@ -17,10 +17,13 @@ classdef FullyDigital < matlab.System
 		ip;				% IP address
 		mem;			% mem type: 'bram' or 'dram'
 		socket;			% TCP socket to control the Pi-Radio platform
-		fpga;			% 
-		rfferx;			% 
-		rffetx;			% 
-		isDebug;		% print debug messages.
+		fpga;			% FPGA object
+		isDebug;		% if 'true' print debug messages
+		
+		nadc;
+		ndac;
+		nread = 0;		% ADC flow control parameters.
+		nskip = 0;		% 
 	end
 	
 	methods
@@ -32,44 +35,53 @@ classdef FullyDigital < matlab.System
 				obj.set(varargin{:});
 			end
 			
-			% Establish TCP connections.
+			% Establish connection with the Pi-Radio TCP Server.
 			obj.connect();
 			
+			% Create the RFSoC object
 			obj.fpga = piradio.fpga.RFSoC('ip', obj.ip, 'mem', obj.mem, ...
-				'isDebug', obj.isDebug);
+				'nadc', obj.nadc, 'ndac', obj.ndac, 'isDebug', obj.isDebug);
 		end
 		
 		function delete(obj)
 			% Destructor.
-			
-			clear obj.fpga obj.rffrx obj.rfftx;
+			clear obj.fpga;
 			
 			% Close TCP connection.
 			obj.disconnect();
 		end
 		
-		function data = recv(obj, nsamp)
+		function data = recv(obj, nsamp)			
+			% Read data from the FPGA
 			data = obj.fpga.recv(nsamp);
 			
+			% Process the data (i.e., calibration, flow control)
+			if (obj.nread ~= 0)
+				data = reshape(data,(nsamp/16)/(obj.nread*2),[],obj.nadc);
+			end
 		end
 		
 		function send(obj, data)
 			obj.fpga.send(data);
 		end
 		
-		function setSchedule(obj, readMax, skipMax)
-			write(obj.socket, sprintf("+%d%d",readMax,skipMax));
+		function ctrlFlow(obj)
+			% Control the reading flow 
+			write(obj.socket, sprintf("+ %d %d",obj.nread,obj.nskip));
+			pause(0.1);
 		end
 	end
 	
 	methods (Access = 'protected')
 		function connect(obj)
+			% Establish connection with the Pi-Radio TCP Server.
 			if (isempty(obj.socket))
 				obj.socket = tcpclient(obj.ip, 8083, "Timeout", 5);
 			end
 		end
 		
 		function disconnect(obj)
+			% Close the Pi-Radio TCP socket
 			if (~isempty(obj.socket)) 
 				write(obj.socket, 'disconnect');
 				pause(0.1);

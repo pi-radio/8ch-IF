@@ -8,7 +8,7 @@
 % Description:
 %	
 %
-% Date: Last update on Feb. 11, 2021
+% Date: Last update on Feb. 15, 2021
 %
 % Copyright @ 2021
 %
@@ -23,7 +23,7 @@ classdef RFSoC < matlab.System
 		mem;			% mem type: 'bram' or 'dram'
 		sockData;		% data TCP connection
 		sockCtrl;		% ctrl TCP connection
-		isDebug;		% print debug messages.
+		isDebug;		% if 'true' print debug messages
     end
     
     methods
@@ -48,19 +48,39 @@ classdef RFSoC < matlab.System
 			obj.disconnect();
 		end
 		
-		function data = recv(obj, nsamp)
+		function rxtd = recv(obj, nsamp)
+			% Send over TCP with the necessary commands in the control and 
+			% data channel
 			obj.sendCmd(sprintf("SetLocalMemSample 0 0 0 %d", nsamp));
 			obj.sendCmd("LocalMemInfo 0");
 			obj.sendCmd(sprintf("LocalMemTrigger 0 4 %d 0x0001", nsamp));
 			write(obj.sockData, sprintf("ReadDataFromMemory 0 0 %d 0\r\n", 2*nsamp));
+			rxtd = read(obj.sockData, nsamp, 'int16'); % read ADC samples
 			pause(0.1);
-			data = read(obj.sockData, nsamp, 'int16');
-			pause(0.1);
+			% Read response from the Data TCP Socket
 			rsp = read(obj.sockData);
 			if (obj.isDebug)
 				fprintf(1, "%s", rsp);
 			end
-			data = reshape(data,[],1); % return a column vector
+			
+			% Transform the received data to a column vector
+			rxtd = reshape(rxtd,[],1);
+			
+			% Initialize a temporary buffer
+			tmp = zeros(2,size(rxtd,1)/32,8);
+			
+			% Convert data to 'double' from 'int16'. We reshape the data
+			% since the ADCs generate 2-samples per clock cycle.
+			rxtd = double(reshape(rxtd,2,[]));
+			
+			% Create the complex samples for each ADC. 
+			for iadc = 1:obj.nadc
+				tmp(:,:,iadc) = rxtd(:,(2*iadc-1):2*obj.nadc:end) + ...
+					1j*rxtd(:,2*iadc:2*obj.nadc:end);
+			end
+			
+			% Return a matrix of nsamp x nadc
+			rxtd = reshape(tmp, [], obj.nadc);
 		end
 		
 		function send(obj, txtd)
@@ -73,8 +93,8 @@ classdef RFSoC < matlab.System
 			tmp(1,:,:) = (int16(imag(txtd)));
 			tmp(2,:,:) = (int16(real(txtd)));
 
-			% Since the FPGA needs 2 samples of I/Q for every DAC we need
-			% to reshape the tensor
+			% Since the FPGA needs 2 samples of I/Q for every DAC at each 
+			% clock cyle we need to reshape the tensor
 			tmp = reshape(tmp,2*2,[],obj.ndac);
 			
 			% We interleave the data for every DAC
@@ -89,8 +109,8 @@ classdef RFSoC < matlab.System
 			nsamp = length(txtd);	% num of samples
 			nbytes = 2*nsamp;		% num of bytes
 			
-			% Send the data over TCP with the necessary commans in the
-			% control channel
+			% Send the data over TCP with the necessary commands in the
+			% control and data channel
 			obj.sendCmd("LocalMemInfo 1");
 			obj.sendCmd(sprintf("LocalMemTrigger 1 0 0 0x0000"));
 			write(obj.sockData, sprintf("WriteDataToMemory 0 0 %d 0\r\n", nbytes));
@@ -121,24 +141,13 @@ classdef RFSoC < matlab.System
 				% obj.sendCmd(tmp{4});
 				%
 				% However, we are going to parse a simplified version of
-				% the with only the necessary commands.
+				% the file with only the necessary commands.
 				if (tline(1) ~= '%')
 					fprintf(1, '%s\n', tline);
 					obj.sendCmd(tline)
 				end
 			end
 			fclose(fid);
-			
-			% Configure memory
-			obj.sendCmd("GetMemType");
-			if (obj.mem == "bram")
-				obj.sendCmd("SetMemType 1");
-			else
-				obj.sendCmd("SetMemType 0");
-			end
-			
-			obj.sendCmd("GetBitstream");
-			obj.sendCmd("GetMemType");
 		end
 	end
 	
@@ -157,8 +166,9 @@ classdef RFSoC < matlab.System
 		end
 		
 		function disconnect(obj)
-			% This function disbands communication sockets between a host
-			% and an RFSoC device.
+			% This function disbands the communication sockets between the
+			% host and an RFSoC device.
+			
 			if (~isempty(obj.sockData))
 				flush(obj.sockData);
 				clear obj.sockData;
@@ -178,7 +188,7 @@ classdef RFSoC < matlab.System
 			% Send a command to the FPGA
             write(obj.sockCtrl, sprintf("%s\r\n",cmd));
 			
-			% Wait for the FPGA
+			% Wait for the FPGA to process the command
 			pause(0.1);
 			
 			% Read response and print in debug mode

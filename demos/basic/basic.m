@@ -1,4 +1,4 @@
-%% DEMO: Basic Tx/Rx with the Pi-Radio FD platform
+%% DEMO: Basic Tx/Rx with the Pi-Radio 140 GHz, 8 channel SDR
 
 %% Packages
 % Add the folder containing +piradio to the MATLAB path.
@@ -10,28 +10,36 @@ mem = "bram";		% Memory type
 isDebug = true;		% print debug messages
 ndac = 8;			% num of D/A converters
 nadc = 8;			% num of A/D converters
-nsamp = 1024;		% num of samples
-fsamp = 983.04e6;	% sample frequency
-fc = 50e6;
+fs = 983.04e6;		% sample frequency
 
 %% Create a Fully Digital SDR
-sdr0 = piradio.sdr.FullyDigital('ip', ip, 'mem', mem, 'isDebug', isDebug);
+sdr0 = piradio.sdr.FullyDigital('ip', ip, 'mem', mem, ...
+	'ndac', ndac, 'nadc', nadc, 'isDebug', isDebug);
+
+% Set the number of DACs and ADCs of the RFSoC
 sdr0.fpga.set('ndac', ndac, 'nadc', nadc);
 
-%% Configure the RFSoC
+% Configure the RFSoC
 sdr0.fpga.configure('../../config/rfsoc.cfg');
 
-%% Create some time-domain samples
+%% Create time-domain samples and send them to the DACs
+fc = 25e6;		% carrier frequency
+nsamp = 1024;	% number of samples to generate for each DAC
+
+% Create a time-vector
 t = (0:nsamp-1)';
 
+% Initialize the tx data
 txtd = zeros(nsamp, ndac);
 for idac = 1:ndac
-	txtd(:,idac) = sin(2*pi*t*idac*fc/fsamp)+1j*sin(2*pi*t*idac*fc/fsamp);
+	% Create a complex 
+	txtd(:,idac) = exp(1j*2*pi*t*idac*fc/fs);
 end
 
 txtd = txtd./abs(max(txtd))*32767;
+
 % Plot the tx data
-f = linspace(-fsamp/2, fsamp/2, nsamp);
+f = linspace(-fs/2, fs/2, nsamp);
 
 figure(1);
 clf;
@@ -44,33 +52,55 @@ for idac = 1:ndac
 	title(sprintf('DAC %d', idac), 'interpreter', 'latex', 'fontsize', 14);
 end
 
-%% Send the data to the DACs
+% Send the data to the DACs
 sdr0.send(txtd);
 
-%% Receive data from the ADCs
+%% Receive continous data from the ADCs
 nsamp = 8192;
+sdr0.set('nread', 0, 'nskip', 0);
+sdr0.ctrlFlow();
 rxtd = sdr0.recv(nsamp);
 
-% process the received samples
-tmp = zeros(2,size(rxtd,1)/32,8);
-rxtd = double(reshape(rxtd,2,[]));
-idx = 1;
-for iadc = 1:2:2*nadc
-	tmp(:,:,idx) = rxtd(:,iadc:2*nadc:end) + 1j*rxtd(:,(iadc+1):2*nadc:end);
-	idx = idx + 1;
-end
-rxtd = reshape(tmp, [], nadc);
-
-%% Plot the rx data
-f = linspace(-fsamp/2, fsamp/2, nsamp/(2*nadc));
+% Plot the rx data
+f = linspace(-fs/2, fs/2, nsamp/(2*nadc));
 
 figure(1);
 clf;
 for iadc = 1:nadc
-	subplot(2,4,iadc);
+	subplot(2,nadc/2,iadc);
 	plot(f*1e-6, 10*log10(abs(fftshift(fft(rxtd(:,iadc))))));
 	axis tight;
 	ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
 	xlabel('Frequency [MHz]', 'interpreter', 'latex', 'fontsize', 12);
 	title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
 end
+
+%% Receive discontinus data from the ADCs
+nread = 512; % read ADC data for 512 cc
+nskip = 512; % skip ADC data for 512 cc
+
+% First, set the read and skip timings
+sdr0.set('nread', nread, 'nskip', nskip);
+sdr0.ctrlFlow();
+
+% Then, read data from the ADCs. Note that the returned data should be a
+% tensor with dimensions: ntimes x nsamp x 
+nsamp = 32768;
+rxtd = sdr0.recv(nsamp);
+
+ntimes = (nsamp/16)/(2*nread);
+
+f = linspace(-fs/2, fs/2, nsamp/16/ntimes);
+for itimes=1:1
+	for iadc = 1:nadc
+		subplot(2,nadc/2,iadc);
+		plot(f*1e-6, 10*log10(abs(fftshift(fft(rxtd(itimes,:,iadc))))));
+		axis tight;
+		ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
+		xlabel('Frequency [MHz]', 'interpreter', 'latex', 'fontsize', 12);
+		title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
+	end
+end
+
+%% Close the TCP Connections
+clear sdr0
