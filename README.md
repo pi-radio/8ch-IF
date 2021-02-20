@@ -1,1 +1,2 @@
-# ucsb-140GHz-ch8
+# Pi-Radio 140 GHz - 8 Channel IF - SDR
+
