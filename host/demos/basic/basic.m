@@ -5,7 +5,7 @@
 addpath('../../');
 
 %% Parameters
-ip = "10.113.5.6";	% IP Address 
+ip = "192.168.1.43";	% IP Address 
 mem = "bram";		% Memory type
 isDebug = true;		% print debug messages
 ndac = 8;			% num of D/A converters
@@ -23,21 +23,22 @@ sdr0.fpga.set('ndac', ndac, 'nadc', nadc);
 sdr0.fpga.configure('../../config/rfsoc.cfg');
 
 %% Create time-domain samples and send them to the DACs
-nfft = 1024;	% number of samples to generate for each DAC
+nFFT = 1024;	% number of samples to generate for each DAC
+scToUse = 25;
 
 % Initialize the tx data
-txtd = zeros(nfft, ndac);
+txtd = zeros(nFFT, ndac);
 for idac = 1:ndac
-	txfd = zeros(nfft,1);
+	txfd = zeros(nFFT,1);
+   	txfd(nFFT/2 + 1 + scToUse) = 1;
 	txfd = fftshift(txfd);
-	txfd(25) = 1;
 	txtd(:,idac) = ifft(txfd);
 end
 
 txtd = txtd./abs(max(txtd))*32000;
 
 % Plot the tx data
-scs = linspace(-nfft/2, nfft/2-1, nfft);
+scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
 
 figure(1);
 clf;
@@ -46,7 +47,7 @@ for idac = 1:ndac
 	plot(scs,(abs(fftshift(fft(txtd(:,idac))))));
 	axis tight;
 	grid on; grid minor;
-	ylabel('Magnitude', 'interpreter', 'latex', 'fontsize', 12);
+	ylabel('Magnitude [Abs]', 'interpreter', 'latex', 'fontsize', 12);
 	xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
 	title(sprintf('DAC %d', idac), 'interpreter', 'latex', 'fontsize', 14);
 end
@@ -55,30 +56,31 @@ end
 sdr0.send(txtd);
 
 %% Receive continous data from the ADCs
-nfft = 1024;
-nsamp = nfft*2*nadc;
+nFFT = 1024;
+nsamp = nFFT*2*nadc;
 sdr0.set('nread', 0, 'nskip', 0);
 sdr0.ctrlFlow();
 rxtd = sdr0.recv(nsamp);
 
 % Plot the rx data
-scs = linspace(-nfft/2, nfft/2-1, nfft);
+scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
 
-figure(1);
+figure(2);
 clf;
 for iadc = 1:nadc
 	subplot(2,nadc/2,iadc);
 	plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,iadc))))));
-	axis tight;
-	grid on; grid minor;
+	axis tight;	grid on; grid minor;
 	ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
 	xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
 	title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
+    ylim([20 70]);
 end
 
 %% Receive discontinus data from the ADCs
-nread = nfft/2; % read ADC data for 512 cc
+nread = nFFT/2; % read ADC data for 512 cc
 nskip = 512; % skip ADC data for 512 cc
+ntimes = 2;
 
 % First, set the read and skip timings
 sdr0.set('nread', nread, 'nskip', nskip);
@@ -86,20 +88,24 @@ sdr0.ctrlFlow();
 
 % Then, read data from the ADCs. Note that the returned data should be a
 % tensor with dimensions: nsamp x ntimes x nadc
-nsamp = 2*nfft*2*nadc;
+nsamp = ntimes*nFFT*2*nadc;
 rxtd = sdr0.recv(nsamp);
 
-ntimes = nsamp/16/nfft;
-for itimes=1:1
+figure(2);
+for itimes=1:ntimes
 	for iadc = 1:nadc
 		subplot(2,nadc/2,iadc);
 		plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,itimes,iadc))))));
-		axis tight;
+		axis tight; grid on; grid minor;
 		ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
 		xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
 		title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
-	end
+        ylim([20 70]);
+    end
+    pause(1);
 end
 
-%% Close the TCP Connections
-clear sdr0
+%% Close the TCP Connections and clear the Workspace variables
+clear sdr0;
+clear ans fs iadc idac ip isDebug itimes mem nadc ndac nFFT nread nsamp;
+clear nskip ntimes rxtd scs scToUse txfd txtd;
