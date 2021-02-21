@@ -2,8 +2,8 @@
 % Company:	New York University
 %			Pi-Radio
 %
-% Engineer: Aditya Dhananjay
-%			Panagiotis Skrimponis
+% Engineer: Panagiotis Skrimponis
+%			Aditya Dhananjay
 %
 % Description:
 %
