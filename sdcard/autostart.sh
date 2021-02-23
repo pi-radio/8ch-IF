@@ -10,3 +10,4 @@ if [ $RESULT -eq 0 ]; then
 	piradio&
 	rftool
 fi
+
