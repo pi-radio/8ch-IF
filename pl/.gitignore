@@ -1,1 +1,5 @@
 project
+.Xil
+*.log
+*.str
+*.jou
