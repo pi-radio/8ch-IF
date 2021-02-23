@@ -5,7 +5,7 @@
 addpath('../../');
 
 %% Parameters
-ip = "192.168.1.43";	% IP Address 
+ip = "10.1.1.43";	% IP Address 
 mem = "bram";		% Memory type
 isDebug = true;		% print debug messages
 ndac = 8;			% num of D/A converters
