@@ -15,7 +15,7 @@ sdr0.ctrlFlow();
 
 % Subcarrier 100 corresponds to a tone at 96 MHz
 % The DAC will transmit it at 1.096 GHz, since the IF freq is 1 GHz
-scToUse = 100;
+scToUse = 25;
 
 % 2. Initialize the TX waveform and send it to the RFSoC
 txtd = zeros(nFFT, ndac);
@@ -60,6 +60,14 @@ for iter=1:max_iter
         fd_bin = fd(nFFT/2 + 1 + scToUse);
         cal_factors_iters(iter,rxIndex) = fd_bin / fd_bin_ref;
     end
+end
+
+cal_factors = zeros(1,8);
+for rxIndex = 1:8
+    for iter=1:max_iter
+        cal_factors(rxIndex) = cal_factors(rxIndex) + cal_factors_iters(iter,rxIndex);
+    end
+    cal_factors(rxIndex) = cal_factors(rxIndex) / max_iter; % Normalize Amplitudes
 end
 
 clc;

@@ -145,6 +145,10 @@ classdef RFSoC < matlab.System
 				if (tline(1) ~= '%')
 					fprintf(1, '%s\n', tline);
 					obj.sendCmd(tline)
+                else
+                    % If there is a comment, then pause. This will be
+                    % helpful to let PLLs stabilize, etc.
+                    pause(0.2);
 				end
 			end
 			fclose(fid);

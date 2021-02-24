@@ -111,7 +111,8 @@ if { ${design_name} eq "" } {
 }
 
   # Add USER_COMMENTS on $design_name
-  set_property USER_COMMENTS.comment_0 "ZCU111 RFSoC TRD" [get_bd_designs $design_name]
+  set_property USER_COMMENTS.comment_0 "8-channel IF Interface" [get_bd_designs $design_name]
+  set_property USER_COMMENTS.comment_1 "8-channel IF Interface" [get_bd_designs $design_name]
 
 common::send_gid_msg -ssname BD::TCL -id 2005 -severity "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
 
@@ -1927,32 +1928,32 @@ proc create_root_design { parentCell } {
    CONFIG.ADC0_Fabric_Freq {491.520} \
    CONFIG.ADC0_Multi_Tile_Sync {true} \
    CONFIG.ADC0_Outclk_Freq {245.760} \
-   CONFIG.ADC0_PLL_Enable {true} \
-   CONFIG.ADC0_Refclk_Freq {491.520} \
+   CONFIG.ADC0_PLL_Enable {false} \
+   CONFIG.ADC0_Refclk_Freq {3932.160} \
    CONFIG.ADC0_Sampling_Rate {3.93216} \
    CONFIG.ADC1_Clock_Source {1} \
    CONFIG.ADC1_Enable {1} \
    CONFIG.ADC1_Fabric_Freq {491.520} \
    CONFIG.ADC1_Multi_Tile_Sync {true} \
    CONFIG.ADC1_Outclk_Freq {245.760} \
-   CONFIG.ADC1_PLL_Enable {true} \
-   CONFIG.ADC1_Refclk_Freq {491.520} \
+   CONFIG.ADC1_PLL_Enable {false} \
+   CONFIG.ADC1_Refclk_Freq {3932.160} \
    CONFIG.ADC1_Sampling_Rate {3.93216} \
    CONFIG.ADC2_Clock_Source {2} \
    CONFIG.ADC2_Enable {1} \
    CONFIG.ADC2_Fabric_Freq {491.520} \
    CONFIG.ADC2_Multi_Tile_Sync {true} \
    CONFIG.ADC2_Outclk_Freq {245.760} \
-   CONFIG.ADC2_PLL_Enable {true} \
-   CONFIG.ADC2_Refclk_Freq {491.520} \
+   CONFIG.ADC2_PLL_Enable {false} \
+   CONFIG.ADC2_Refclk_Freq {3932.160} \
    CONFIG.ADC2_Sampling_Rate {3.93216} \
    CONFIG.ADC3_Clock_Source {3} \
    CONFIG.ADC3_Enable {1} \
    CONFIG.ADC3_Fabric_Freq {491.520} \
    CONFIG.ADC3_Multi_Tile_Sync {true} \
    CONFIG.ADC3_Outclk_Freq {245.760} \
-   CONFIG.ADC3_PLL_Enable {true} \
-   CONFIG.ADC3_Refclk_Freq {491.520} \
+   CONFIG.ADC3_PLL_Enable {false} \
+   CONFIG.ADC3_Refclk_Freq {3932.160} \
    CONFIG.ADC3_Sampling_Rate {3.93216} \
    CONFIG.ADC_Data_Type00 {1} \
    CONFIG.ADC_Data_Type01 {1} \
@@ -2084,16 +2085,16 @@ proc create_root_design { parentCell } {
    CONFIG.DAC0_Fabric_Freq {491.520} \
    CONFIG.DAC0_Multi_Tile_Sync {true} \
    CONFIG.DAC0_Outclk_Freq {245.760} \
-   CONFIG.DAC0_PLL_Enable {true} \
-   CONFIG.DAC0_Refclk_Freq {491.520} \
+   CONFIG.DAC0_PLL_Enable {false} \
+   CONFIG.DAC0_Refclk_Freq {3932.160} \
    CONFIG.DAC0_Sampling_Rate {3.93216} \
    CONFIG.DAC1_Clock_Source {5} \
    CONFIG.DAC1_Enable {1} \
    CONFIG.DAC1_Fabric_Freq {491.520} \
    CONFIG.DAC1_Multi_Tile_Sync {true} \
    CONFIG.DAC1_Outclk_Freq {245.760} \
-   CONFIG.DAC1_PLL_Enable {true} \
-   CONFIG.DAC1_Refclk_Freq {491.520} \
+   CONFIG.DAC1_PLL_Enable {false} \
+   CONFIG.DAC1_Refclk_Freq {3932.160} \
    CONFIG.DAC1_Sampling_Rate {3.93216} \
    CONFIG.DAC2_Clock_Source {6} \
    CONFIG.DAC3_Clock_Source {7} \
@@ -3836,7 +3837,6 @@ proc create_root_design { parentCell } {
   # Restore current instance
   current_bd_instance $oldCurInst
 
-  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -3848,4 +3848,6 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
+
+common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 
