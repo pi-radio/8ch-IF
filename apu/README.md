@@ -48,7 +48,7 @@ $ petalinux-config
 In the dialog clear the location of the Vivado project of the FPGA Manager. Then, package the project by executing the following commands.
 ```console
 $ cd ..
-$ petalinux-package --bsp -p plnx --clear --output piradio_plnx.bsp --force
+$ petalinux-package --bsp -p plnx --clean --output piradio_plnx.bsp --force
 ```
 
 ## More information
