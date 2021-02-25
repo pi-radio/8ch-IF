@@ -1,3 +1,5 @@
+addpath('../../');
+
 % Parameters
 ip = "10.1.1.43";	% IP Address 
 mem = "bram";		% Memory type
@@ -19,3 +21,4 @@ sdr0.fpga.set('ndac', ndac, 'nadc', nadc);
 
 % Configure the RFSoC
 sdr0.fpga.configure('../../config/rfsoc.cfg');
+
