@@ -14,7 +14,7 @@ In the dialog indicate in the 'FPGA Manager' the location of the Vivado project.
 
 ## Build the project
 ```console
-% petalinux-build
+$ petalinux-build
 ```
 
 ## Create the SD card images
@@ -47,7 +47,6 @@ $ petalinux-config
 ```
 In the dialog clear the location of the Vivado project of the FPGA Manager. Then, package the project by executing the following commands.
 ```console
-$ cd ..
 $ petalinux-package --bsp -p plnx --clean --output piradio_plnx.bsp --force
 ```
 

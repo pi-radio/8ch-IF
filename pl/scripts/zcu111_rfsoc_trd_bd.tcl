@@ -1406,7 +1406,7 @@ proc create_hier_cell_adc_dma_block { parentCell nameHier } {
   # Create instance: xlconstant_0, and set properties
   set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
   set_property -dict [ list \
-   CONFIG.CONST_VAL {0xFFFFFFFFFFFFFFFF} \
+   CONFIG.CONST_VAL {0xFFFFFFFFffffffff} \
    CONFIG.CONST_WIDTH {64} \
  ] $xlconstant_0
 
@@ -1684,7 +1684,7 @@ proc create_hier_cell_adc_0001 { parentCell nameHier } {
   # Create instance: axis_data_fifo_0, and set properties
   set axis_data_fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_0 ]
   set_property -dict [ list \
-   CONFIG.FIFO_DEPTH {2048} \
+   CONFIG.FIFO_DEPTH {8192} \
    CONFIG.FIFO_MEMORY_TYPE {block} \
    CONFIG.HAS_RD_DATA_COUNT {1} \
    CONFIG.HAS_TLAST {1} \
@@ -1695,6 +1695,9 @@ proc create_hier_cell_adc_0001 { parentCell nameHier } {
 
   # Create instance: axis_flow_control_0, and set properties
   set axis_flow_control_0 [ create_bd_cell -type ip -vlnv user.org:user:axis_flow_control:1.0 axis_flow_control_0 ]
+  set_property -dict [ list \
+   CONFIG.C_AXIS_DWIDTH {512} \
+ ] $axis_flow_control_0
 
   # Create instance: axis_register_slice_0, and set properties
   set axis_register_slice_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 axis_register_slice_0 ]

@@ -153,6 +153,21 @@ classdef RFSoC < matlab.System
 			end
 			fclose(fid);
 		end
+		
+		function setMemory(obj, memType)
+			% Configure the memory
+			if (obj.mem ~= memType)
+				obj.sendCmd("GetMemType");
+				if (memType == "bram")
+					obj.sendCmd("SetMemType 1");
+				else
+					obj.sendCmd("SetMemType 0");
+				end
+				obj.sendCmd("GetBitstream");
+				obj.sendCmd("GetMemType");
+				obj.mem = memType;
+			end
+		end
 	end
 	
 	methods (Access = 'protected')
