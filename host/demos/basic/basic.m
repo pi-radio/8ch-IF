@@ -78,9 +78,10 @@ for iadc = 1:nadc
 end
 
 %% Receive discontinus data from the ADCs
+nFFT = 1024;	% num of FFT points
 nread = nFFT/2; % read ADC data for 512 cc
-nskip = 512; % skip ADC data for 512 cc
-ntimes = 2;
+nskip = 1024;	% skip ADC data for 1024 cc
+ntimes = 32;	
 
 % First, set the read and skip timings
 sdr0.set('nread', nread, 'nskip', nskip);
@@ -91,6 +92,8 @@ sdr0.ctrlFlow();
 nsamp = ntimes*nFFT*2*nadc;
 rxtd = sdr0.recv(nsamp);
 
+scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
+
 figure(2);
 for itimes=1:ntimes
 	for iadc = 1:nadc
@@ -100,8 +103,8 @@ for itimes=1:ntimes
 		ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
 		xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
 		title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
-        ylim([20 70]);
-    end
+		ylim([20 70]);
+	end
     pause(1);
 end
 
