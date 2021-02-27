@@ -90,7 +90,7 @@ if {[get_property PROGRESS [get_runs synth_1]] != "100%"} {
    puts "ERROR: Synthesis failed"   
 } else { puts "PASS_MSG: Synthesis finished Successfully" 
 
-#	close_project
+	#close_project
 exit
 
 launch_runs impl_1 -to_step write_bitstream -jobs 20
