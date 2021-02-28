@@ -87,31 +87,22 @@ reset_run synth_1
 launch_runs synth_1 -jobs 20
 wait_on_run synth_1
 if {[get_property PROGRESS [get_runs synth_1]] != "100%"} {   
-   puts "ERROR: Synthesis failed"   
-} else { puts "PASS_MSG: Synthesis finished Successfully" 
+    puts "ERROR: Synthesis failed"   
+} else {
+    puts "PASS_MSG: Synthesis finished Successfully"
+    launch_runs impl_1 -to_step write_bitstream -jobs 20
+    wait_on_run impl_1
+    if {[get_property PROGRESS [get_runs impl_1]] != "100%"} {   
+        puts "ERROR: Implementation failed"   
+    } else {
+        puts "PASS_MSG: Implementation finished Successfully"
 
-	#close_project
-exit
+        file mkdir $proj_dir/$proj_name.sdk
+        write_hw_platform -fixed -force  -include_bit -file $proj_dir/$proj_name.sdk/${proj_name}_wrapper.xsa
+        puts "PASS_MSG: XSA Generated Successfully"
 
-launch_runs impl_1 -to_step write_bitstream -jobs 20
-#write_dsa -fixed -force ./hw_description.xsa
-wait_on_run impl_1
-if {[get_property PROGRESS [get_runs impl_1]] != "100%"} {   
-   puts "ERROR: Implementation failed"   
-} else { puts "PASS_MSG: Implementation finished Successfully"
-
-#source ./designs/most_used_impl.tcl
-#source ./designs/report_timing_num.tcl
-#open_run impl_1
-#report_timing_summary -delay_type min_max -report_unconstrained -file ./$project_dir/timing.txt
-file mkdir $proj_dir/$proj_name.sdk
-write_hw_platform -fixed -force  -include_bit -file $proj_dir/$proj_name.sdk/${proj_name}_wrapper.xsa
-
-puts "PASS_MSG: XSA Generated Successfully"
-
-}}
-
-#file copy -force ./$project_dir/$design_nm.runs/impl_1/${design_nm}_wrapper.sysdef ./$project_dir/$design_nm.sdk/[string range $project_dir 6 50].hdf
+    }
+}
 
 close_project
 exit

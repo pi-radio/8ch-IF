@@ -1,4 +1,0 @@
-INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Workspace/8ch-if/fpga/project/axis_flow_ctrl/axis_flow_ctrl.srcs/sources_1/new/axis_flow_ctrl.v" into library xil_defaultlib
-INFO: [VRFC 10-311] analyzing module axis_flow_ctrl
-INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Workspace/8ch-if/fpga/project/axis_flow_ctrl/axis_flow_ctrl.srcs/sim_1/new/tb.v" into library xil_defaultlib
-INFO: [VRFC 10-311] analyzing module tb

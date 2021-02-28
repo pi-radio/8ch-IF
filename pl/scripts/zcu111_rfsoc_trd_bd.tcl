@@ -113,6 +113,12 @@ if { ${design_name} eq "" } {
   # Add USER_COMMENTS on $design_name
   set_property USER_COMMENTS.comment_0 "8-channel IF Interface" [get_bd_designs $design_name]
   set_property USER_COMMENTS.comment_1 "8-channel IF Interface" [get_bd_designs $design_name]
+  set_property USER_COMMENTS.comment_2 "This is a modification of Xilinx's RFSoC TRD Design.
+
+NYU and Pi-Radio have used the Xilinx TRD as a starting point,
+and have made modifications to the design.
+
+Xilinx retains all rights to their intellectual property and designs." [get_bd_designs $design_name]
 
 common::send_gid_msg -ssname BD::TCL -id 2005 -severity "INFO" "Currently the variable <design_name> is equal to \"$design_name\"."
 
@@ -133,17 +139,17 @@ xilinx.com:ip:ddr4:2.2\
 user.org:user:user_register:1.0\
 xilinx.com:ip:usp_rf_data_converter:2.4\
 xilinx.com:ip:xlconcat:2.1\
+xilinx.com:ip:xlconstant:1.1\
 xilinx.com:ip:zynq_ultra_ps_e:3.3\
 xilinx.com:ip:axis_combiner:1.1\
 xilinx.com:ip:axis_data_fifo:2.0\
 user.org:user:axis_flow_control:1.0\
 xilinx.com:ip:axis_register_slice:1.1\
 user.org:user:tlast_gen_v1_0:1.0\
-xilinx.com:ip:xlslice:1.0\
-xilinx.com:ip:xlconstant:1.1\
 xilinx.com:ip:axi_dma:7.1\
 user.org:user:adc_strm_mux:1.0\
 xilinx.com:ip:axis_broadcaster:1.1\
+xilinx.com:ip:xlslice:1.0\
 xilinx.com:ip:clk_wiz:6.0\
 xilinx.com:user:sync:1.0\
 xilinx.com:ip:util_ds_buf:2.1\
@@ -1434,158 +1440,6 @@ proc create_hier_cell_adc_dma_block { parentCell nameHier } {
   current_bd_instance $oldCurInst
 }
 
-# Hierarchical cell: adc_calib_gpio
-proc create_hier_cell_adc_calib_gpio { parentCell nameHier } {
-
-  variable script_folder
-
-  if { $parentCell eq "" || $nameHier eq "" } {
-     catch {common::send_gid_msg -ssname BD::TCL -id 2092 -severity "ERROR" "create_hier_cell_adc_calib_gpio() - Empty argument(s)!"}
-     return
-  }
-
-  # Get object for parentCell
-  set parentObj [get_bd_cells $parentCell]
-  if { $parentObj == "" } {
-     catch {common::send_gid_msg -ssname BD::TCL -id 2090 -severity "ERROR" "Unable to find parent cell <$parentCell>!"}
-     return
-  }
-
-  # Make sure parentObj is hier blk
-  set parentType [get_property TYPE $parentObj]
-  if { $parentType ne "hier" } {
-     catch {common::send_gid_msg -ssname BD::TCL -id 2091 -severity "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
-     return
-  }
-
-  # Save current instance; Restore later
-  set oldCurInst [current_bd_instance .]
-
-  # Set parent object as current
-  current_bd_instance $parentObj
-
-  # Create cell and set as current instance
-  set hier_obj [create_bd_cell -type hier $nameHier]
-  current_bd_instance $hier_obj
-
-  # Create interface pins
-
-  # Create pins
-  create_bd_pin -dir I -from 31 -to 0 Din
-  create_bd_pin -dir O -from 0 -to 0 Dout
-  create_bd_pin -dir O -from 0 -to 0 Dout1
-  create_bd_pin -dir O -from 0 -to 0 Dout3
-  create_bd_pin -dir O -from 0 -to 0 Dout4
-  create_bd_pin -dir O -from 0 -to 0 Dout5
-  create_bd_pin -dir O -from 0 -to 0 Dout6
-  create_bd_pin -dir O -from 0 -to 0 Dout7
-  create_bd_pin -dir O -from 0 -to 0 Dout8
-  create_bd_pin -dir I -from 0 -to 0 In0
-  create_bd_pin -dir I -from 0 -to 0 In1
-  create_bd_pin -dir I -from 0 -to 0 In2
-  create_bd_pin -dir I -from 0 -to 0 In3
-  create_bd_pin -dir I -from 0 -to 0 In4
-  create_bd_pin -dir I -from 0 -to 0 In5
-  create_bd_pin -dir I -from 0 -to 0 In6
-  create_bd_pin -dir I -from 0 -to 0 In7
-  create_bd_pin -dir O -from 31 -to 0 dout2
-
-  # Create instance: adc0_01_int_cal_freeze, and set properties
-  set adc0_01_int_cal_freeze [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 adc0_01_int_cal_freeze ]
-
-  # Create instance: adc0_23_int_cal_freeze, and set properties
-  set adc0_23_int_cal_freeze [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 adc0_23_int_cal_freeze ]
-  set_property -dict [ list \
-   CONFIG.DIN_FROM {1} \
-   CONFIG.DIN_TO {1} \
-   CONFIG.DOUT_WIDTH {1} \
- ] $adc0_23_int_cal_freeze
-
-  # Create instance: adc1_01_int_cal_freeze, and set properties
-  set adc1_01_int_cal_freeze [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 adc1_01_int_cal_freeze ]
-  set_property -dict [ list \
-   CONFIG.DIN_FROM {2} \
-   CONFIG.DIN_TO {2} \
-   CONFIG.DOUT_WIDTH {1} \
- ] $adc1_01_int_cal_freeze
-
-  # Create instance: adc1_23_int_cal_freeze, and set properties
-  set adc1_23_int_cal_freeze [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 adc1_23_int_cal_freeze ]
-  set_property -dict [ list \
-   CONFIG.DIN_FROM {3} \
-   CONFIG.DIN_TO {3} \
-   CONFIG.DOUT_WIDTH {1} \
- ] $adc1_23_int_cal_freeze
-
-  # Create instance: adc2_01_int_cal_freeze, and set properties
-  set adc2_01_int_cal_freeze [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 adc2_01_int_cal_freeze ]
-  set_property -dict [ list \
-   CONFIG.DIN_FROM {4} \
-   CONFIG.DIN_TO {4} \
-   CONFIG.DOUT_WIDTH {1} \
- ] $adc2_01_int_cal_freeze
-
-  # Create instance: adc2_23_int_cal_freeze, and set properties
-  set adc2_23_int_cal_freeze [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 adc2_23_int_cal_freeze ]
-  set_property -dict [ list \
-   CONFIG.DIN_FROM {5} \
-   CONFIG.DIN_TO {5} \
-   CONFIG.DOUT_WIDTH {1} \
- ] $adc2_23_int_cal_freeze
-
-  # Create instance: adc3_01_int_cal_freeze, and set properties
-  set adc3_01_int_cal_freeze [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 adc3_01_int_cal_freeze ]
-  set_property -dict [ list \
-   CONFIG.DIN_FROM {6} \
-   CONFIG.DIN_TO {6} \
-   CONFIG.DOUT_WIDTH {1} \
- ] $adc3_01_int_cal_freeze
-
-  # Create instance: adc3_23_int_cal_freeze, and set properties
-  set adc3_23_int_cal_freeze [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 adc3_23_int_cal_freeze ]
-  set_property -dict [ list \
-   CONFIG.DIN_FROM {7} \
-   CONFIG.DIN_TO {7} \
-   CONFIG.DOUT_WIDTH {1} \
- ] $adc3_23_int_cal_freeze
-
-  # Create instance: xlconcat_1, and set properties
-  set xlconcat_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_1 ]
-  set_property -dict [ list \
-   CONFIG.NUM_PORTS {9} \
- ] $xlconcat_1
-
-  # Create instance: xlconstant_2, and set properties
-  set xlconstant_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_2 ]
-  set_property -dict [ list \
-   CONFIG.CONST_WIDTH {24} \
- ] $xlconstant_2
-
-  # Create port connections
-  connect_bd_net -net adc0_01_int_cal_freeze1_Dout [get_bd_pins Dout] [get_bd_pins adc0_23_int_cal_freeze/Dout]
-  connect_bd_net -net adc0_23_int_cal_freeze1_Dout [get_bd_pins Dout5] [get_bd_pins adc1_01_int_cal_freeze/Dout]
-  connect_bd_net -net adc1_01_int_cal_freeze1_Dout [get_bd_pins Dout4] [get_bd_pins adc1_23_int_cal_freeze/Dout]
-  connect_bd_net -net adc2_01_int_cal_freeze_Dout [get_bd_pins Dout1] [get_bd_pins adc2_01_int_cal_freeze/Dout]
-  connect_bd_net -net adc2_23_int_cal_freeze_Dout [get_bd_pins Dout3] [get_bd_pins adc2_23_int_cal_freeze/Dout]
-  connect_bd_net -net adc3_01_int_cal_freeze1_Dout [get_bd_pins Dout6] [get_bd_pins adc3_01_int_cal_freeze/Dout]
-  connect_bd_net -net adc3_23_int_cal_freeze_Dout [get_bd_pins Dout7] [get_bd_pins adc3_23_int_cal_freeze/Dout]
-  connect_bd_net -net user_register_0_slv_reg19_output [get_bd_pins Din] [get_bd_pins adc0_01_int_cal_freeze/Din] [get_bd_pins adc0_23_int_cal_freeze/Din] [get_bd_pins adc1_01_int_cal_freeze/Din] [get_bd_pins adc1_23_int_cal_freeze/Din] [get_bd_pins adc2_01_int_cal_freeze/Din] [get_bd_pins adc2_23_int_cal_freeze/Din] [get_bd_pins adc3_01_int_cal_freeze/Din] [get_bd_pins adc3_23_int_cal_freeze/Din]
-  connect_bd_net -net usp_rf_data_converter_0_adc0_01_cal_frozen [get_bd_pins In0] [get_bd_pins xlconcat_1/In0]
-  connect_bd_net -net usp_rf_data_converter_0_adc0_23_cal_frozen [get_bd_pins In1] [get_bd_pins xlconcat_1/In1]
-  connect_bd_net -net usp_rf_data_converter_0_adc1_01_cal_frozen [get_bd_pins In2] [get_bd_pins xlconcat_1/In2]
-  connect_bd_net -net usp_rf_data_converter_0_adc1_23_cal_frozen [get_bd_pins In3] [get_bd_pins xlconcat_1/In3]
-  connect_bd_net -net usp_rf_data_converter_0_adc2_01_cal_frozen [get_bd_pins In4] [get_bd_pins xlconcat_1/In4]
-  connect_bd_net -net usp_rf_data_converter_0_adc2_23_cal_frozen [get_bd_pins In5] [get_bd_pins xlconcat_1/In5]
-  connect_bd_net -net usp_rf_data_converter_0_adc3_01_cal_frozen [get_bd_pins In6] [get_bd_pins xlconcat_1/In6]
-  connect_bd_net -net usp_rf_data_converter_0_adc3_23_cal_frozen [get_bd_pins In7] [get_bd_pins xlconcat_1/In7]
-  connect_bd_net -net xlconcat_1_dout [get_bd_pins dout2] [get_bd_pins xlconcat_1/dout]
-  connect_bd_net -net xlconstant_2_dout [get_bd_pins xlconcat_1/In8] [get_bd_pins xlconstant_2/dout]
-  connect_bd_net -net xlslice_2_Dout [get_bd_pins Dout8] [get_bd_pins adc0_01_int_cal_freeze/Dout]
-
-  # Restore current instance
-  current_bd_instance $oldCurInst
-}
-
 # Hierarchical cell: adc_0001
 proc create_hier_cell_adc_0001 { parentCell nameHier } {
 
@@ -1867,9 +1721,6 @@ proc create_root_design { parentCell } {
   # Create instance: adc_0001
   create_hier_cell_adc_0001 [current_bd_instance .] adc_0001
 
-  # Create instance: adc_calib_gpio
-  create_hier_cell_adc_calib_gpio [current_bd_instance .] adc_calib_gpio
-
   # Create instance: adc_dma_block
   create_hier_cell_adc_dma_block [current_bd_instance .] adc_dma_block
 
@@ -2082,7 +1933,7 @@ proc create_root_design { parentCell } {
    CONFIG.ADC_Slice31_Enable {true} \
    CONFIG.ADC_Slice32_Enable {true} \
    CONFIG.ADC_Slice33_Enable {true} \
-   CONFIG.Calibration_Freeze {true} \
+   CONFIG.Calibration_Freeze {false} \
    CONFIG.DAC0_Clock_Source {4} \
    CONFIG.DAC0_Enable {1} \
    CONFIG.DAC0_Fabric_Freq {491.520} \
@@ -2164,6 +2015,13 @@ proc create_root_design { parentCell } {
   set_property -dict [ list \
    CONFIG.NUM_PORTS {3} \
  ] $xlconcat_0
+
+  # Create instance: xlconstant_0, and set properties
+  set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
+  set_property -dict [ list \
+   CONFIG.CONST_VAL {0} \
+   CONFIG.CONST_WIDTH {32} \
+ ] $xlconstant_0
 
   # Create instance: zynq_ultra_ps_e_0, and set properties
   set zynq_ultra_ps_e_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:zynq_ultra_ps_e:3.3 zynq_ultra_ps_e_0 ]
@@ -3755,13 +3613,6 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net zynq_ultra_ps_e_0_M_AXI_HPM0_FPD [get_bd_intf_pins axi_smc/S00_AXI] [get_bd_intf_pins zynq_ultra_ps_e_0/M_AXI_HPM0_FPD]
 
   # Create port connections
-  connect_bd_net -net adc0_01_int_cal_freeze1_Dout [get_bd_pins adc_calib_gpio/Dout] [get_bd_pins usp_rf_data_converter_0/adc0_23_int_cal_freeze]
-  connect_bd_net -net adc0_23_int_cal_freeze1_Dout [get_bd_pins adc_calib_gpio/Dout5] [get_bd_pins usp_rf_data_converter_0/adc1_01_int_cal_freeze]
-  connect_bd_net -net adc1_01_int_cal_freeze1_Dout [get_bd_pins adc_calib_gpio/Dout4] [get_bd_pins usp_rf_data_converter_0/adc1_23_int_cal_freeze]
-  connect_bd_net -net adc2_01_int_cal_freeze_Dout [get_bd_pins adc_calib_gpio/Dout1] [get_bd_pins usp_rf_data_converter_0/adc2_01_int_cal_freeze]
-  connect_bd_net -net adc2_23_int_cal_freeze_Dout [get_bd_pins adc_calib_gpio/Dout3] [get_bd_pins usp_rf_data_converter_0/adc2_23_int_cal_freeze]
-  connect_bd_net -net adc3_01_int_cal_freeze1_Dout [get_bd_pins adc_calib_gpio/Dout6] [get_bd_pins usp_rf_data_converter_0/adc3_01_int_cal_freeze]
-  connect_bd_net -net adc3_23_int_cal_freeze_Dout [get_bd_pins adc_calib_gpio/Dout7] [get_bd_pins usp_rf_data_converter_0/adc3_23_int_cal_freeze]
   connect_bd_net -net adc_0001_axis_data_count [get_bd_pins adc_0001/axis_data_count] [get_bd_pins user_register_0/slv_reg8_input]
   connect_bd_net -net adc_0001_m_axis_tvalid_0 [get_bd_pins adc_0001/m_axis_tvalid_0] [get_bd_pins adc_dma_block/s_axis_s2mm_tvalid1]
   connect_bd_net -net adc_0001_tlast_0 [get_bd_pins adc_0001/tlast_0] [get_bd_pins adc_dma_block/s_axis_s2mm_tlast1]
@@ -3790,19 +3641,9 @@ proc create_root_design { parentCell } {
   connect_bd_net -net rst_ps8_0_99M_peripheral_aresetn [get_bd_pins adc_0001/axi_resetn] [get_bd_pins adc_dma_block/axi_resetn] [get_bd_pins dac_dma_block/axi_resetn] [get_bd_pins dac_tile0_block0/axi_resetn] [get_bd_pins ps8_0_axi_periph/M00_ARESETN] [get_bd_pins ps8_0_axi_periph/M01_ARESETN] [get_bd_pins ps8_0_axi_periph/M02_ARESETN] [get_bd_pins ps8_0_axi_periph/M03_ARESETN] [get_bd_pins ps8_0_axi_periph/M04_ARESETN] [get_bd_pins ps8_0_axi_periph/M05_ARESETN] [get_bd_pins ps8_0_axi_periph/S00_ARESETN] [get_bd_pins reset_block/peripheral_aresetn3] [get_bd_pins user_register_0/s00_axi_aresetn] [get_bd_pins usp_rf_data_converter_0/s_axi_aresetn]
   connect_bd_net -net sys_rst_0_1 [get_bd_ports sys_rst_0] [get_bd_pins ddr4_0/sys_rst]
   connect_bd_net -net trdy_0_1 [get_bd_pins dac_dma_block/trdy_0] [get_bd_pins dac_tile0_block0/S00_AXIS_tready]
-  connect_bd_net -net user_register_0_slv_reg19_output [get_bd_pins adc_calib_gpio/Din] [get_bd_pins user_register_0/slv_reg19_output]
-  connect_bd_net -net usp_rf_data_converter_0_adc0_01_cal_frozen [get_bd_pins adc_calib_gpio/In0] [get_bd_pins usp_rf_data_converter_0/adc0_01_cal_frozen]
-  connect_bd_net -net usp_rf_data_converter_0_adc0_23_cal_frozen [get_bd_pins adc_calib_gpio/In1] [get_bd_pins usp_rf_data_converter_0/adc0_23_cal_frozen]
-  connect_bd_net -net usp_rf_data_converter_0_adc1_01_cal_frozen [get_bd_pins adc_calib_gpio/In2] [get_bd_pins usp_rf_data_converter_0/adc1_01_cal_frozen]
-  connect_bd_net -net usp_rf_data_converter_0_adc1_23_cal_frozen [get_bd_pins adc_calib_gpio/In3] [get_bd_pins usp_rf_data_converter_0/adc1_23_cal_frozen]
-  connect_bd_net -net usp_rf_data_converter_0_adc2_01_cal_frozen [get_bd_pins adc_calib_gpio/In4] [get_bd_pins usp_rf_data_converter_0/adc2_01_cal_frozen]
-  connect_bd_net -net usp_rf_data_converter_0_adc2_23_cal_frozen [get_bd_pins adc_calib_gpio/In5] [get_bd_pins usp_rf_data_converter_0/adc2_23_cal_frozen]
-  connect_bd_net -net usp_rf_data_converter_0_adc3_01_cal_frozen [get_bd_pins adc_calib_gpio/In6] [get_bd_pins usp_rf_data_converter_0/adc3_01_cal_frozen]
-  connect_bd_net -net usp_rf_data_converter_0_adc3_23_cal_frozen [get_bd_pins adc_calib_gpio/In7] [get_bd_pins usp_rf_data_converter_0/adc3_23_cal_frozen]
   connect_bd_net -net usp_rf_data_converter_0_irq [get_bd_pins usp_rf_data_converter_0/irq] [get_bd_pins xlconcat_0/In0]
   connect_bd_net -net xlconcat_0_dout [get_bd_pins xlconcat_0/dout] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
-  connect_bd_net -net xlconcat_1_dout [get_bd_pins adc_calib_gpio/dout2] [get_bd_pins user_register_0/slv_reg18_input]
-  connect_bd_net -net xlslice_2_Dout [get_bd_pins adc_calib_gpio/Dout8] [get_bd_pins usp_rf_data_converter_0/adc0_01_int_cal_freeze]
+  connect_bd_net -net xlconstant_0_dout [get_bd_pins user_register_0/slv_reg18_input] [get_bd_pins xlconstant_0/dout]
   connect_bd_net -net zynq_ultra_ps_e_0_emio_gpio_o [get_bd_pins adc_0001/Din] [get_bd_pins clk_block/Din] [get_bd_pins dac_tile0_block0/Din] [get_bd_pins zynq_ultra_ps_e_0/emio_gpio_o]
   connect_bd_net -net zynq_ultra_ps_e_0_pl_clk0 [get_bd_pins adc_0001/s_axi_lite_aclk] [get_bd_pins adc_dma_block/s_axi_lite_aclk] [get_bd_pins dac_dma_block/s_axi_lite_aclk] [get_bd_pins ps8_0_axi_periph/ACLK] [get_bd_pins ps8_0_axi_periph/M00_ACLK] [get_bd_pins ps8_0_axi_periph/M01_ACLK] [get_bd_pins ps8_0_axi_periph/M02_ACLK] [get_bd_pins ps8_0_axi_periph/M03_ACLK] [get_bd_pins ps8_0_axi_periph/M04_ACLK] [get_bd_pins ps8_0_axi_periph/M05_ACLK] [get_bd_pins ps8_0_axi_periph/S00_ACLK] [get_bd_pins reset_block/slowest_sync_clk3] [get_bd_pins user_register_0/s00_axi_aclk] [get_bd_pins usp_rf_data_converter_0/s_axi_aclk] [get_bd_pins zynq_ultra_ps_e_0/maxihpm1_fpd_aclk] [get_bd_pins zynq_ultra_ps_e_0/pl_clk0]
   connect_bd_net -net zynq_ultra_ps_e_0_pl_resetn0 [get_bd_pins reset_block/ext_reset_in1] [get_bd_pins zynq_ultra_ps_e_0/pl_resetn0]
