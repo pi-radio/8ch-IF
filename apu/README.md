@@ -8,7 +8,7 @@ $ petalinux-create -t project -s piradio_plnx.bsp
 ## Configure the project with the latest `.xsa` file
 ```console
 $ cd plnx
-$ petalinux-config --get-hw-description=../pl/project
+$ petalinux-config --get-hw-description=../pl/project/zcu111_rfsoc_trd.sdk
 ```
 In the dialog indicate in the 'FPGA Manager' the location of the Vivado project.
 

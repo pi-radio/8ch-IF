@@ -33,8 +33,8 @@
 //		input wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg15_input,
 //		input wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg16_input,
 //		input wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg17_input,
-		input wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg18_input,
-		output wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg19_output,
+//		input wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg18_input,
+//		output wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg19_output,
 //		output wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg20_output,
 //		output wire [C_S_AXI_DATA_WIDTH-1 : 0] slv_reg21_output,
 
@@ -303,7 +303,7 @@
 	      slv_reg15 <= {C_S_AXI_DATA_WIDTH{1'b0}};
 	      slv_reg16 <= {C_S_AXI_DATA_WIDTH{1'b0}};
 	      slv_reg17 <= {C_S_AXI_DATA_WIDTH{1'b0}};
-	      slv_reg18 <= slv_reg18_input;
+	      slv_reg18 <= {C_S_AXI_DATA_WIDTH{1'b0}};
  	    if (slv_reg_wren)
  	      begin
  	        case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )
