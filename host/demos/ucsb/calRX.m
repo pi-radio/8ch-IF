@@ -1,85 +1,56 @@
-%
-%   Make sure that all ADCs are synchronized. To set up the experiment,
-%   connect the RFSoC to the breakout board (Avnet). Connect the P output
-%   of DAC0 to the P input of ADC0. Connect the N output of DAC0 to the
-%   N input of any other ADC i (such that 1 <= i <= 7). Now, we will test
-%   whether ADC i is synchronizd with ADC 0. Prior to running this script,
-%   make sure that you run open_sdr.
-%
+%  Calibrate the RX Array (UCSB 140 GHz, 8 channel IF). Adjust the RX-side
+%  IF and LO frequencies in such a way so as to get a deterministic tone at
+%  the RX. In this experiment, we expect the baseband signal to come in at
+%  96 MHz (i.e., subcarrier index 100).
 
-% 1. Set up the variables
+% 1. Initialize experiment parameters
 nFFT = 1024;
-nsamp = nFFT*2*nadc;
-sdr0.set('nread', 0, 'nskip', 0);
+scToUse = 100;
+
+% 2. Receive and Process
+nread = nFFT/2; % read ADC data for 512 cc
+nskip = 1024;	% skip ADC data for 1024 cc
+nbatch = 40;	% num of batches to read
+
+% Read data from the ADCs. Note that the returned data should be a
+% tensor with dimensions: nsamp x ntimes x nadc
+nsamp = nbatch*nFFT*2*nadc;
+sdr0.set('nread', nread, 'nskip', nskip, 'nbytes', nsamp*2);
 sdr0.ctrlFlow();
+rxtd = sdr0.recv(nsamp);
 
-% Subcarrier 100 corresponds to a tone at 96 MHz
-% The DAC will transmit it at 1.096 GHz, since the IF freq is 1 GHz
-scToUse = 25;
-
-% 2. Initialize the TX waveform and send it to the RFSoC
-txtd = zeros(nFFT, ndac);
-for idac = 1:1 % Transmit from channel 1 (DAC 0)
-	txfd = zeros(nFFT,1);
-   	txfd(nFFT/2 + 1 + scToUse) = 1;
-	txfd = fftshift(txfd);
-	txtd(:,idac) = ifft(txfd);
-end
-
-txtd = txtd./abs(max(txtd))*32000;
-sdr0.send(txtd);
-
-% 3. Receive and Process
-max_iter=10;
-figure(1);
-cal_factors_iters = zeros(max_iter,nadc);
 scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
-for iter=1:max_iter
-    rxtd = sdr0.recv(nsamp);
-    
-    if (1) % Plot the received spectrum for sanity checking
-        for iadc=1:nadc
-            td = rxtd(:,iadc);
-            fd = fftshift(fft(td));
-            subplot(2,4,iadc);
-            plot(scs, mag2db(abs(fd)));
-            grid on; grid minor;
-            ylim([40 150]);
-        end
-    end
+calFactorsIters = zeros(nbatch,nadc);
 
+for ibatch=1:nbatch  
     % What is the factor at rxIndex = 1 (i.e., ADC0)
-    td = rxtd(:,1);
+    td = rxtd(:,ibatch,1);
     fd = fftshift(fft(td));
     fd_bin_ref = fd(nFFT/2 + 1 + scToUse);
-
-    % What are the cal factors of every RX channel?
-    for rxIndex = 1:8
-        td = rxtd(:,rxIndex);
+    
+    for iadc = 1:nadc
+        if (0)  % Do we want to lot things out?
+            figure(2);
+            subplot(2,nadc/2,iadc);
+            plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,ibatch,iadc))))));
+            axis tight; grid on; grid minor;
+            ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
+            xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
+            title(sprintf('ADC %d, Iter %d', iadc, ibatch), 'interpreter', 'latex', 'fontsize', 14);
+            ylim([20 70]);
+        end
+        
+        td = rxtd(:,ibatch,iadc);
         fd = fftshift(fft(td));
         fd_bin = fd(nFFT/2 + 1 + scToUse);
-        cal_factors_iters(iter,rxIndex) = fd_bin / fd_bin_ref;
+        calFactorsIters(ibatch,iadc) = fd_bin / fd_bin_ref;
     end
-end
-
-cal_factors = zeros(1,8);
-for rxIndex = 1:8
-    for iter=1:max_iter
-        cal_factors(rxIndex) = cal_factors(rxIndex) + cal_factors_iters(iter,rxIndex);
-    end
-    cal_factors(rxIndex) = cal_factors(rxIndex) / max_iter; % Normalize Amplitudes
 end
 
 clc;
-abs(cal_factors_iters)
-rad2deg(angle(cal_factors_iters))
+abs(calFactorsIters)
+rad2deg(angle(calFactorsIters))
 
-%
-% Look at the output corresponding to channel i (ADC i-1). This should
-% have stable amplitude and phase factors. Rerun the script with other
-% channels in different tiles, to make sure they are all stable with
-% respect to ADC 0. Another way of running the experiment is taking the
-% signal from DAC 0, splitting it N ways, and feeding these signals into
-% the ADCs. But you need to have the required splitters (with 50 ohm
-% matched impedance) to do this.
-%
+% Clear the workspace variables
+clear ans calFactorsIters fd fd_bin fd_bin_ref iadc ibatch idac nbatch;
+clear nFFT nread nsamp nskip rxtd scs scToUse tx txfd td txtd;

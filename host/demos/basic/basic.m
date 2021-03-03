@@ -54,7 +54,7 @@ sdr0.send(txtd);
 nFFT = 1024;	% num of FFT points
 nread = nFFT/2; % read ADC data for 512 cc
 nskip = 1024;	% skip ADC data for 1024 cc
-nbatch = 1;		% num of batches
+nbatch = 1000;	% num of batches
 
 % Then, read data from the ADCs. Note that the returned data should be a
 % tensor with dimensions: nsamp x ntimes x nadc
@@ -65,21 +65,21 @@ rxtd = sdr0.recv(nsamp);
 
 scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
 
-for itimes=1:nbatch
+for ibatch=nbatch-40:nbatch
 	% Plot the frequency-domain signal
 	figure(2);
 	for iadc = 1:nadc
 		subplot(2,nadc/2,iadc);
-		plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,itimes,iadc))))));
+		plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,ibatch,iadc))))));
 		axis tight; grid on; grid minor;
 		ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
 		xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
-		title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
+		title(sprintf('ADC %d, Iter %d', iadc, ibatch), 'interpreter', 'latex', 'fontsize', 14);
 		ylim([20 70]);
-	end
+    end
 end
 
 %% Close the TCP Connections and clear the Workspace variables
 clear sdr0;
-clear ans fs iadc idac ip isDebug itimes mem nadc ndac nFFT nread nsamp;
-clear nskip ntimes rxtd scs scToUse txfd txtd;
+clear ans fs iadc idac ip isDebug imatch mem nadc ndac nFFT nread nsamp;
+clear nskip rxtd scs scToUse txfd txtd nbatch;

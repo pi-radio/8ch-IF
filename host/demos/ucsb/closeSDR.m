@@ -1,1 +1,1 @@
-clear sdr0 ans fs ip isDebug mem nadc ndac;
+clear sdr0 fs ip isDebug nadc ndac;

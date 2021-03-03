@@ -7,64 +7,77 @@
 %   make sure that you run open_sdr.
 %
 
-% 1. Set up the variables
-nFFT = 1024;
-nsamp = nFFT*2*nadc;
-sdr0.set('nread', 0, 'nskip', 0);
-sdr0.ctrlFlow();
-
-% Subcarrier 100 corresponds to a tone at 96 MHz
-% The DAC will transmit it at 1.096 GHz, since the IF freq is 1 GHz
+% 1. Initialize the TX waveform and send it to the RFSoC
+nFFT = 1024;	% number of samples to generate for each DAC
 scToUse = 100;
 
-% 2. Initialize the TX waveform and send it to the RFSoC
 txtd = zeros(nFFT, ndac);
-for idac = 1:1 % Transmit from channel 1 (DAC 0)
-	txfd = zeros(nFFT,1);
-   	txfd(nFFT/2 + 1 + scToUse) = 1;
-	txfd = fftshift(txfd);
-	txtd(:,idac) = ifft(txfd);
+txfd = zeros(nFFT,1);
+txfd(nFFT/2 + 1 + scToUse) = 1;
+txfd = fftshift(txfd);
+txtd(:,1) = ifft(txfd);
+txtd = txtd./abs(max(txtd))*32000;
+
+% Plot the TX data
+scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
+
+figure(1);
+clf;
+for idac = 1:ndac
+	subplot(2,4,idac);
+	plot(scs,(abs(fftshift(fft(txtd(:,idac))))));
+	axis tight;
+	grid on; grid minor;
+	ylabel('Magnitude [Abs]', 'interpreter', 'latex', 'fontsize', 12);
+	xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
+	title(sprintf('DAC %d', idac), 'interpreter', 'latex', 'fontsize', 14);
 end
 
-txtd = txtd./abs(max(txtd))*32000;
+% Send the data to the DACs
 sdr0.send(txtd);
 
-% 3. Receive and Process
-max_iter=10;
-figure(1);
-cal_factors_iters = zeros(max_iter,nadc);
-scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
-for iter=1:max_iter
-    rxtd = sdr0.recv(nsamp);
-    
-    if (1) % Plot the received spectrum for sanity checking
-        for iadc=1:nadc
-            td = rxtd(:,iadc);
-            fd = fftshift(fft(td));
-            subplot(2,4,iadc);
-            plot(scs, mag2db(abs(fd)));
-            grid on; grid minor;
-            ylim([40 150]);
-        end
-    end
+% 2. Receive and Process
+nread = nFFT/2; % read ADC data for 512 cc
+nskip = 1024;	% skip ADC data for 1024 cc
+nbatch = 10;	% num of batches to read
 
+% Then, read data from the ADCs. Note that the returned data should be a
+% tensor with dimensions: nsamp x ntimes x nadc
+nsamp = nbatch*nFFT*2*nadc;
+sdr0.set('nread', nread, 'nskip', nskip, 'nbytes', nsamp*2);
+sdr0.ctrlFlow();
+rxtd = sdr0.recv(nsamp);
+
+scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
+calFactorsIters = zeros(nbatch,nadc);
+for ibatch=1:nbatch
+	% Plot the frequency-domain signal
+	figure(2);
+    
     % What is the factor at rxIndex = 1 (i.e., ADC0)
-    td = rxtd(:,1);
+    td = rxtd(:,ibatch,1);
     fd = fftshift(fft(td));
     fd_bin_ref = fd(nFFT/2 + 1 + scToUse);
-
-    % What are the cal factors of every RX channel?
-    for rxIndex = 1:8
-        td = rxtd(:,rxIndex);
+    
+    for iadc = 1:nadc
+		subplot(2,nadc/2,iadc);
+		plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,ibatch,iadc))))));
+		axis tight; grid on; grid minor;
+		ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
+		xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
+		title(sprintf('ADC %d, Iter %d', iadc, ibatch), 'interpreter', 'latex', 'fontsize', 14);
+		ylim([20 70]);
+        
+        td = rxtd(:,ibatch,iadc);
         fd = fftshift(fft(td));
         fd_bin = fd(nFFT/2 + 1 + scToUse);
-        cal_factors_iters(iter,rxIndex) = fd_bin / fd_bin_ref;
+        calFactorsIters(ibatch,iadc) = fd_bin / fd_bin_ref;
     end
 end
 
 clc;
-abs(cal_factors_iters)
-rad2deg(angle(cal_factors_iters))
+abs(calFactorsIters)
+rad2deg(angle(calFactorsIters))
 
 %
 % Look at the output corresponding to channel i (ADC i-1). This should
