@@ -8,22 +8,22 @@
 % Description:
 %
 %
-% Date: Last update on Feb. 15, 2021
+% Date: Last update on Mar. 3, 2021
 %
 % Copyright @ 2021
 %
 classdef FullyDigital < matlab.System
 	properties
 		ip;				% IP address
-		mem;			% mem type: 'bram' or 'dram'
 		socket;			% TCP socket to control the Pi-Radio platform
 		fpga;			% FPGA object
 		isDebug;		% if 'true' print debug messages
 		
-		nadc;
-		ndac;
+		nadc;			% num of A/D converters
+		ndac;			% num of D/A converters
 		nread = 0;		% ADC flow control parameters.
-		nskip = 0;		% 
+		nskip = 0;		% num of samples to skip
+		nbytes = 0;		% num of bytes to read
 	end
 	
 	methods
@@ -39,7 +39,7 @@ classdef FullyDigital < matlab.System
 			obj.connect();
 			
 			% Create the RFSoC object
-			obj.fpga = piradio.fpga.RFSoC('ip', obj.ip, 'mem', obj.mem, ...
+			obj.fpga = piradio.fpga.RFSoC('ip', obj.ip, ...
 				'nadc', obj.nadc, 'ndac', obj.ndac, 'isDebug', obj.isDebug);
 		end
 		
@@ -67,7 +67,7 @@ classdef FullyDigital < matlab.System
 		
 		function ctrlFlow(obj)
 			% Control the reading flow 
-			write(obj.socket, sprintf("+ %d %d",obj.nread,obj.nskip));
+			write(obj.socket, sprintf("+ %d %d %d",obj.nread,obj.nskip,obj.nbytes));
 			pause(0.1);
 		end
 	end

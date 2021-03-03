@@ -5,19 +5,14 @@
 addpath('../../');
 
 %% Parameters
-ip = "10.1.1.43";	% IP Address 
-mem = "bram";		% Memory type
+ip = "10.1.1.43";	% IP Address
 isDebug = true;		% print debug messages
 ndac = 8;			% num of D/A converters
 nadc = 8;			% num of A/D converters
 fs = 983.04e6;		% sample frequency
 
 %% Create a Fully Digital SDR
-sdr0 = piradio.sdr.FullyDigital('ip', ip, 'mem', mem, ...
-	'ndac', ndac, 'nadc', nadc, 'isDebug', isDebug);
-
-% Set the number of DACs and ADCs of the RFSoC
-sdr0.fpga.set('ndac', ndac, 'nadc', nadc);
+sdr0 = piradio.sdr.FullyDigital('ip', ip, 'ndac', ndac, 'nadc', nadc, 'isDebug', isDebug);
 
 % Configure the RFSoC
 sdr0.fpga.configure('../../config/rfsoc.cfg');
@@ -55,47 +50,24 @@ end
 % Send the data to the DACs
 sdr0.send(txtd);
 
-%% Receive continous data from the ADCs
-nFFT = 1024;
-nsamp = nFFT*2*nadc;
-sdr0.set('nread', 0, 'nskip', 0);
-sdr0.ctrlFlow();
-rxtd = sdr0.recv(nsamp);
-
-% Plot the rx data
-scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
-
-figure(2);
-clf;
-for iadc = 1:nadc
-	subplot(2,nadc/2,iadc);
-	plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,iadc))))));
-	axis tight;	grid on; grid minor;
-	ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
-	xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
-	title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
-    ylim([20 70]);
-end
-
-%% Receive discontinus data from the ADCs
+%% Receive data from the ADCs
 nFFT = 1024;	% num of FFT points
 nread = nFFT/2; % read ADC data for 512 cc
 nskip = 1024;	% skip ADC data for 1024 cc
-ntimes = 32;	
-
-% First, set the read and skip timings
-sdr0.set('nread', nread, 'nskip', nskip);
-sdr0.ctrlFlow();
+nbatch = 1;		% num of batches
 
 % Then, read data from the ADCs. Note that the returned data should be a
 % tensor with dimensions: nsamp x ntimes x nadc
-nsamp = ntimes*nFFT*2*nadc;
+nsamp = nbatch*nFFT*2*nadc;
+sdr0.set('nread', nread, 'nskip', nskip, 'nbytes', nsamp*2);
+sdr0.ctrlFlow();
 rxtd = sdr0.recv(nsamp);
 
 scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
 
-figure(2);
-for itimes=1:ntimes
+for itimes=1:nbatch
+	% Plot the frequency-domain signal
+	figure(2);
 	for iadc = 1:nadc
 		subplot(2,nadc/2,iadc);
 		plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,itimes,iadc))))));
@@ -105,7 +77,6 @@ for itimes=1:ntimes
 		title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
 		ylim([20 70]);
 	end
-    pause(1);
 end
 
 %% Close the TCP Connections and clear the Workspace variables
