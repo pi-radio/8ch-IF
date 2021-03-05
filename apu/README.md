@@ -1,8 +1,7 @@
 # Pi-Radio Non-Realtime Petalinux Project
 
 ## Dependencies
-* [Petalinux 2020.2](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/embedded-design-tools.html).
-For more information on installing Petalinux please refer to the [documentation](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2020_2/ug1144-petalinux-tools-reference-guide.pdf).
+* [Petalinux 2020.2](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/embedded-design-tools.html)
 
 ## Create the project
 ```console
@@ -56,4 +55,5 @@ $ petalinux-package --bsp -p plnx --clean --output piradio_plnx.bsp --force
 ```
 
 ## More information
-For more information about building the Petalinux image please refer to this [guide](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/571605227/Petalinux+Build+Tutorial+for+ZU+RFSoC+ZCU111+2020.1).
+* For more information on installing the Petalinux please refer to this [documentation](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2020_2/ug1144-petalinux-tools-reference-guide.pdf).
+* For more information on building the Petalinux image please refer to this [guide](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/571605227/Petalinux+Build+Tutorial+for+ZU+RFSoC+ZCU111+2020.1).
