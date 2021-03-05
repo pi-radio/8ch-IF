@@ -1,4 +1,8 @@
-# Instructions for building the SD card images
+# Pi-Radio Non-Realtime Petalinux Project
+
+## Dependencies
+* [Petalinux 2020.2](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/embedded-design-tools.html).
+For more information on installing Petalinux please refer to the [documentation](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2020_2/ug1144-petalinux-tools-reference-guide.pdf).
 
 ## Create the project
 ```console
@@ -8,7 +12,7 @@ $ petalinux-create -t project -s piradio_plnx.bsp
 ## Configure the project with the latest `.xsa` file
 ```console
 $ cd plnx
-$ petalinux-config --get-hw-description=../pl/project/zcu111_rfsoc_trd.sdk
+$ petalinux-config --get-hw-description=../../pl/project/zcu111_rfsoc_trd.sdk
 ```
 In the dialog indicate in the 'FPGA Manager' the location of the Vivado project.
 

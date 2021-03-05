@@ -24,13 +24,13 @@ scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
 figure(1);
 clf;
 for idac = 1:ndac
-	subplot(2,4,idac);
-	plot(scs,(abs(fftshift(fft(txtd(:,idac))))));
-	axis tight;
-	grid on; grid minor;
-	ylabel('Magnitude [Abs]', 'interpreter', 'latex', 'fontsize', 12);
-	xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
-	title(sprintf('DAC %d', idac), 'interpreter', 'latex', 'fontsize', 14);
+    subplot(2,4,idac);
+    plot(scs,(abs(fftshift(fft(txtd(:,idac))))));
+    axis tight;
+    grid on; grid minor;
+    ylabel('Magnitude [Abs]', 'interpreter', 'latex', 'fontsize', 12);
+    xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
+    title(sprintf('DAC %d', idac), 'interpreter', 'latex', 'fontsize', 14);
 end
 
 % Send the data to the DACs
@@ -43,16 +43,13 @@ nbatch = 10;	% num of batches to read
 
 % Then, read data from the ADCs. Note that the returned data should be a
 % tensor with dimensions: nsamp x ntimes x nadc
-nsamp = nbatch*nFFT*2*nadc;
-sdr0.set('nread', nread, 'nskip', nskip, 'nbytes', nsamp*2);
-sdr0.ctrlFlow();
-rxtd = sdr0.recv(nsamp);
+rxtd = sdr0.recv(nFFT, nskip, nbatch);
 
 scs = linspace(-nFFT/2, nFFT/2-1, nFFT);
 calFactorsIters = zeros(nbatch,nadc);
 for ibatch=1:nbatch
-	% Plot the frequency-domain signal
-	figure(2);
+    % Plot the frequency-domain signal
+    figure(2);
     
     % What is the factor at rxIndex = 1 (i.e., ADC0)
     td = rxtd(:,ibatch,1);
@@ -60,19 +57,20 @@ for ibatch=1:nbatch
     fd_bin_ref = fd(nFFT/2 + 1 + scToUse);
     
     for iadc = 1:nadc
-		subplot(2,nadc/2,iadc);
-		plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,ibatch,iadc))))));
-		axis tight; grid on; grid minor;
-		ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
-		xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
-		title(sprintf('ADC %d, Iter %d', iadc, ibatch), 'interpreter', 'latex', 'fontsize', 14);
-		ylim([20 70]);
+        subplot(2,nadc/2,iadc);
+        plot(scs, 10*log10(abs(fftshift(fft(rxtd(:,ibatch,iadc))))));
+        axis tight; grid on; grid minor;
+        ylabel('Magnitude [dB]', 'interpreter', 'latex', 'fontsize', 12);
+        xlabel('Subcarrier Index', 'interpreter', 'latex', 'fontsize', 12);
+        title(sprintf('ADC %d', iadc), 'interpreter', 'latex', 'fontsize', 14);
+        ylim([20 70]);
         
         td = rxtd(:,ibatch,iadc);
         fd = fftshift(fft(td));
         fd_bin = fd(nFFT/2 + 1 + scToUse);
         calFactorsIters(ibatch,iadc) = fd_bin / fd_bin_ref;
     end
+    sgtitle(sprintf('Iteration %d', ibatch), 'interpreter', 'latex', 'fontsize', 14);
 end
 
 clc;
