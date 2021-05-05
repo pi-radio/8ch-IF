@@ -17,3 +17,4 @@ if [ $RESULT -eq 0 ]; then
 	rftool
 fi
 echo "Done!"
+
