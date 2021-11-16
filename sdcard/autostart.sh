@@ -13,7 +13,8 @@ if [ $RESULT -eq 0 ]; then
 	/etc/init.d/networking start
 	sleep 3
 
-	piradio&
-	rftool
+  piradio&
+	rftool&
 fi
 echo "Done!"
+
