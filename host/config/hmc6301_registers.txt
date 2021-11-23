@@ -1,0 +1,48 @@
+0003c0
+% Note: For BB Attenuation, the default is max attenuation, so we do not damage the RFSoC
+% Below is REGISTER1, used for BB Attenuation
+% Values are as follows:
+%      00dB: 0883c0
+%      06dB: 2883c0
+%      12dB: 1883c0
+%      18dB: 3883c0
+3883c0
+% Below is REGISTER2 used for BB Attenuation
+% Values are as follows:
+%      00dB: 0043c0
+%      06dB: 8043c0
+%      12dB: 4043c0
+%      18dB: c043c0
+c043c0
+c0c3c0
+f923c0
+% Below is REGISTER5 for IF Attenuation
+% Values are as follows:
+%      00dB: f0a3c0
+%      05dB: f2a3c0
+%      10dB: f1a3c0
+%      15dB: f3a3c0
+%      20dB: ffa3c0
+f0a3c0
+fd63c0
+b6e3c0
+% Below is REGISTER8 for RF Attenuation
+% Values are as follows: (This list is incomplete)
+%     Highest LNA Gain: 0113c0
+%     Lowest  LNA Gain: 1913c0
+0113c0
+0293c0
+0053c0
+00d3c0
+0033c0
+00b3c0
+0073c0
+00f3c0
+6c0bc0
+dd8bc0
+0a4bc0
+40cbc0
+002bc0
+48abc0
+006bc0
+46ebc0

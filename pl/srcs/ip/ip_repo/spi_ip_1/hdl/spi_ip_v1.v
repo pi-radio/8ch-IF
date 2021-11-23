@@ -22,12 +22,26 @@
     output  wire  spi_rx1_senb,
     output  wire  spi_rx2_senb,
     output  wire  spi_rx3_senb,
+    output  wire  spi_rx4_senb,
+    output  wire  spi_rx5_senb,
+    output  wire  spi_rx6_senb,
+    output  wire  spi_rx7_senb,
+    output  wire  spi_rx8_senb,
+    
     output  wire  spi_tx0_senb,
     output  wire  spi_tx1_senb,
     output  wire  spi_tx2_senb,
     output  wire  spi_tx3_senb,
+    output  wire  spi_tx4_senb,
+    output  wire  spi_tx5_senb,
+    output  wire  spi_tx6_senb,
+    output  wire  spi_tx7_senb,
+    output  wire  spi_tx8_senb,
+    
     output  wire  spi_lmx_senb,
     output  wire  spi_axi_error,
+    output  wire [3:0] switch_wire,
+    output  wire [7:0] led_wire,
 
 		// User ports ends
 		// Do not modify the ports beyond this line
@@ -94,6 +108,9 @@
   reg rd_req_reg;
   reg por_reset_reg, release_por_reset;
   reg[3:0] chip_index_reg;
+  reg[3:0] switch_reg;
+  reg[7:0] led_reg;
+  reg[3:0] chip_type_reg;
 
   // These are outputs from program_one_reg
   wire SENb_wire;
@@ -124,18 +141,32 @@
             active_reg <= 1'b1;
             release_por_reset <= 1'b1; // release in the next clock
             chip_index_reg <= s_axi_wdata[3:0];
-            if (s_axi_wdata[31:28] == 4'b0000) begin
-              // This is an ADI HMC chip
+            chip_type_reg <= s_axi_wdata[31:28];
+            
+            if (s_axi_wdata[31:28] == 4'd1) begin
+              // This is an ADI HMC 6300 chip
               addr_reg <= s_axi_wdata[27:10];
               wr_data_reg <= 16'd0;
               addr_width_m1_reg <= 5'd17;
               data_width_m1_reg <= 5'd0;
-            end else if (s_axi_wdata[31:28] == 4'b0001) begin
+            end else if (s_axi_wdata[31:28] == 4'd1) begin
+              // This is an ADI HMC6301 chip
+              addr_reg <= s_axi_wdata[27:10];
+              wr_data_reg <= 16'd0;
+              addr_width_m1_reg <= 5'd17;
+              data_width_m1_reg <= 5'd0;
+            end else if (s_axi_wdata[31:28] == 4'd2) begin
               // This is a TI LMX chip
               addr_reg <= s_axi_wdata[27:20];
               wr_data_reg <= s_axi_wdata[19:4];
               addr_width_m1_reg <= 5'd7;
               data_width_m1_reg <= 5'd15;
+            end else if (s_axi_wdata[31:28] == 4'd3) begin
+              // This is a control command for the BB switches
+              switch_reg <= s_axi_wdata[3:0];
+            end else if (s_axi_wdata[31:28] == 4'd4) begin
+              // This is to control the LEDs on the RFSoC (PL side)
+              led_reg <= s_axi_wdata[7:0];
             end else begin
               // This is an error. Reserved for future use
               spi_axi_error_reg <= 1'b1;
@@ -157,15 +188,31 @@
     end
   end
 
-  assign spi_rx0_senb = chip_index_reg == 4'd0 ? SENb_wire : 1'b1;
-  assign spi_rx1_senb = chip_index_reg == 4'd1 ? SENb_wire : 1'b1;
-  assign spi_rx2_senb = chip_index_reg == 4'd2 ? SENb_wire : 1'b1;
-  assign spi_rx3_senb = chip_index_reg == 4'd3 ? SENb_wire : 1'b1;
-  assign spi_tx0_senb = chip_index_reg == 4'd4 ? SENb_wire : 1'b1;
-  assign spi_tx1_senb = chip_index_reg == 4'd5 ? SENb_wire : 1'b1;
-  assign spi_tx2_senb = chip_index_reg == 4'd6 ? SENb_wire : 1'b1;
-  assign spi_tx3_senb = chip_index_reg == 4'd7 ? SENb_wire : 1'b1;
-  assign spi_lmx_senb = chip_index_reg == 4'd8 ? SENb_wire : 1'b1;
+  assign spi_rx0_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd0)) ? SENb_wire : 1'b1;
+  assign spi_rx1_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd1)) ? SENb_wire : 1'b1;
+  assign spi_rx2_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd2)) ? SENb_wire : 1'b1;
+  assign spi_rx3_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd3)) ? SENb_wire : 1'b1;
+  assign spi_rx4_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd4)) ? SENb_wire : 1'b1;
+  assign spi_rx5_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd5)) ? SENb_wire : 1'b1;
+  assign spi_rx6_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd6)) ? SENb_wire : 1'b1;
+  assign spi_rx7_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd7)) ? SENb_wire : 1'b1;
+  assign spi_rx8_senb = ((chip_type_reg == 4'd1) && (chip_index_reg == 4'd8)) ? SENb_wire : 1'b1;
+  
+  assign spi_tx0_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd0)) ? SENb_wire : 1'b1;
+  assign spi_tx1_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd1)) ? SENb_wire : 1'b1;
+  assign spi_tx2_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd2)) ? SENb_wire : 1'b1;
+  assign spi_tx3_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd3)) ? SENb_wire : 1'b1;
+  assign spi_tx4_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd4)) ? SENb_wire : 1'b1;
+  assign spi_tx5_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd5)) ? SENb_wire : 1'b1;
+  assign spi_tx6_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd6)) ? SENb_wire : 1'b1;
+  assign spi_tx7_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd7)) ? SENb_wire : 1'b1;
+  assign spi_tx8_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd8)) ? SENb_wire : 1'b1;
+  
+  // There is only one LMX chip on the board
+  assign spi_lmx_senb = ((chip_type_reg == 4'd2) && (chip_index_reg == 4'd0)) ? SENb_wire : 1'b1;
+   
+  assign switch_wire = switch_reg;
+  assign led_wire = led_reg;
 
   program_one_reg program_one_reg_i0 (
     .reset(por_reset_reg),
