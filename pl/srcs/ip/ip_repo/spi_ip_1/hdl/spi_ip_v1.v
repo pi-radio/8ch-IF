@@ -143,7 +143,7 @@
             chip_index_reg <= s_axi_wdata[3:0];
             chip_type_reg <= s_axi_wdata[31:28];
             
-            if (s_axi_wdata[31:28] == 4'd1) begin
+            if (s_axi_wdata[31:28] == 4'd0) begin
               // This is an ADI HMC 6300 chip
               addr_reg <= s_axi_wdata[27:10];
               wr_data_reg <= 16'd0;

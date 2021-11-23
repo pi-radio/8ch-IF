@@ -19,7 +19,7 @@ sdr0.lo.configure('../../config/lmx_registers_58ghz.txt');
 %   The first parameter is the TX index:
 %       Use {1,2,3,4,5,6,7,8} to configure the primary TX channels
 %       Use {9} to configure the reference TX channel
-%       Use 10 to configure all primary TX channels
+%       Use {10} to configure all primary TX channels
 %   The second parameter is the file name:
 %       hmc6300_registers.txt   % (configure for external LO and power on)
 %       hmc6300_pdn.txt         % (power down the HMC6300)
@@ -29,7 +29,7 @@ sdr0.rffeTx.configure(1, '../../config/hmc6300_registers.txt');
 %   The first parameter is the RX index:
 %       Use {1,2,3,4,5,6,7,8} to configure the primary RX channels
 %       Use {9} to configure the reference RX channel
-%       Use 10 to configure all primary RX channels
+%       Use {10} to configure all primary RX channels
 %   The second parameter is the file name:
 %       hmc6301_registers.txt   % (configure for external LO and power on)
 %       hmc6301_pdn.txt         % (power down the HMC6301)
