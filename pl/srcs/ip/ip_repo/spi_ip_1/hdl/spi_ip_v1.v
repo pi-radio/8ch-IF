@@ -15,7 +15,7 @@
 	)
 	(
 		// Users to add ports here
-		output  wire  spi_clk,
+	output  wire  spi_clk,
     output  wire  spi_mosi,
     input   wire  spi_miso,
     output  wire  spi_rx0_senb,
@@ -115,6 +115,10 @@
   // These are outputs from program_one_reg
   wire SENb_wire;
   wire done_wire;
+  
+  // Wires to swap MOSI and SCLK because of a small bug on the v3 board
+  wire spi_mosi_wire;
+  wire spi_clk_wire;
 
   // These registers are to maintain state at the top level (here)
   reg active_reg, spi_axi_error_reg;
@@ -208,6 +212,10 @@
   assign spi_tx7_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd7)) ? SENb_wire : 1'b1;
   assign spi_tx8_senb = ((chip_type_reg == 4'd0) && (chip_index_reg == 4'd8)) ? SENb_wire : 1'b1;
   
+  // Fix the bug on the v3 board. If HMC, swap the mosi and clk lines
+  assign spi_mosi = (chip_type_reg == 4'd2) ? spi_mosi_wire : spi_clk_wire; 
+  assign spi_clk  = (chip_type_reg == 4'd2) ? spi_clk_wire  : spi_mosi_wire;
+  
   // There is only one LMX chip on the board
   assign spi_lmx_senb = ((chip_type_reg == 4'd2) && (chip_index_reg == 4'd0)) ? SENb_wire : 1'b1;
    
@@ -218,9 +226,9 @@
     .reset(por_reset_reg),
     .clk(s_axi_aclk),
     .SDI(spi_miso),
-    .SDO(spi_mosi),
+    .SDO(spi_mosi_wire),
     .SENb(SENb_wire),
-    .SCLK(spi_clk),
+    .SCLK(spi_clk_wire),
     .oe(),
     .rd_data_wire(),
     .addr(addr_reg),
