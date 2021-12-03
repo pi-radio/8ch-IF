@@ -93,7 +93,7 @@ classdef FullyDigital < matlab.System
                 scs = linspace(-n/2, n/2-1, n);
                 subplot(8,4,rxIndex+24);
                 plot(scs, mag2db(abs(fftshift(fft(data(:,1,rxIndex))))));
-                ylim([60 140]);
+                %ylim([60 140]);
                 grid on;
             end
         end
@@ -121,6 +121,18 @@ classdef FullyDigital < matlab.System
         
         function set_leds(obj, led_string)
             write(obj.socket, sprintf("400000%s", led_string));
+        end
+        
+        function set_switches(obj, switch_string)
+            if switch_string == "normal"
+                write(obj.socket, "3000000c");
+            elseif switch_string == "testTxArray"
+                write(obj.socket, "30000006");
+            elseif switch_string == "testRxArray"
+                write(obj.socket, "30000009");
+            else
+                fprintf("Error. Unrecognized switch_string\n");
+            end
         end
     end
     

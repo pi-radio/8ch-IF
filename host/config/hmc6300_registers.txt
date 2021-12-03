@@ -1,7 +1,7 @@
 0002c0
 5282c0
-% Below we have made sure of single ended operation (cf42c0). Use 8f42c0 for double ended, but that should never be needed
-cf42c0
+% Single ended operation (cf42c0). 8f42c0 for double ended
+8f42c0
 6fc2c0
 0022c0
 fda2c0

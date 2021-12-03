@@ -47,7 +47,7 @@ classdef LMX2595 < matlab.System
                     %fprintf('LMX configuration: Line %d: ', i);
                     %fprintf('.');
                     c = a{1}{2};
-                    s = sprintf('%s%s%s', '2', c(3:8), '8');
+                    s = sprintf('%s%s%s', '2', c(3:8), '0');
                     fprintf('%s\n', s);
                     write(obj.socket, s)
                 end
@@ -72,7 +72,7 @@ classdef LMX2595 < matlab.System
                     %fprintf('LMX configuration: Line %d: ', i);
                     %fprintf('.');
                     c = a{1}{2};
-                    s = sprintf('%s%s%s', '2', c(3:8), '8');
+                    s = sprintf('%s%s%s', '2', c(3:8), '0');
                     fprintf('%s\n', s);
                     write(obj.socket, s)
                 end

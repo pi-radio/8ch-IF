@@ -33,7 +33,7 @@ classdef HMC6301 < matlab.System
         end
         
         function powerDown(obj, rxIndex)
-            if (rIndex == 10)
+            if (rxIndex == 10)
                 for ihmc = '01234567' % Primary RX channels
                     write(obj.socket, sprintf('%s%s%s', '1', 'ff03c0', ihmc));
                     pause(0.1);
@@ -67,7 +67,7 @@ classdef HMC6301 < matlab.System
                             pause (0.01);
                         end
                     else
-                        write(obj.socket, sprintf('%s%s%s', '1', c(1:6), hmcRx(rxIndex)));
+                        write(obj.socket, sprintf('%s%s%s', '1', c(1:6), string(rxIndex)));
                         pause (0.01);
                     end
                 end
