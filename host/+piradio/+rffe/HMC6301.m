@@ -39,7 +39,7 @@ classdef HMC6301 < matlab.System
                     pause(0.1);
                 end
             else
-                write(obj.socket, sprintf('%s%s%s', '1', 'ff03c0', string(rxIndex)));
+                write(obj.socket, sprintf('%s%s%s', '1', 'ff03c0', string(rxIndex-1)));
             end
         end
         
@@ -67,7 +67,7 @@ classdef HMC6301 < matlab.System
                             pause (0.01);
                         end
                     else
-                        write(obj.socket, sprintf('%s%s%s', '1', c(1:6), string(rxIndex)));
+                        write(obj.socket, sprintf('%s%s%s', '1', c(1:6), string(rxIndex-1)));
                         pause (0.01);
                     end
                 end

@@ -13,7 +13,7 @@ sdr0 = piradio.sdr.FullyDigital('ip', ip, 'isDebug', isDebug, ...
 sdr0.fpga.configure('../../config/rfsoc.cfg');
 
 % Configure the LMX chip on the Pi-Radio v3 transceiver board.
-sdr0.lo.configure('../../config/lmx_registers_58ghz.txt');
+sdr0.lo.configure('../../config/lmx_registers_58ghz_for_v3.txt');
 
 % Configure the HMC6300 TX chips on the Pi-Radio v3 transceiver board.
 %   The first parameter is the TX index:

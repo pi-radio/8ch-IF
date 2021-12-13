@@ -93,7 +93,7 @@ classdef FullyDigital < matlab.System
                 scs = linspace(-n/2, n/2-1, n);
                 subplot(8,4,rxIndex+24);
                 plot(scs, mag2db(abs(fftshift(fft(data(:,1,rxIndex))))));
-                %ylim([60 140]);
+                ylim([40 140]);
                 grid on;
             end
         end
