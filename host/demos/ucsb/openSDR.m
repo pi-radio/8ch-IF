@@ -1,11 +1,11 @@
 %% Add the folder containing +piradio to the MATLAB path.
 addpath('../../');
 
-%% Parameters
+% Parameters
 ip = "10.1.1.43";	% IP Address
-isDebug = true;		% print debug messages
+isDebug = false;		% print debug messages
 
-%% Create a Fully Digital SDR
+% Create a Fully Digital SDR
 sdr0 = piradio.sdr.FullyDigital('ip', ip, 'isDebug', isDebug, ...
     'figNum', 100, 'name', 'v3-revA-0001');
 
@@ -33,9 +33,9 @@ sdr0.lo.configure('../../config/lmx_registers_58ghz_for_v3.txt');
 %   The second parameter is the file name:
 %       hmc6301_registers.txt   % (configure for external LO and power on)
 %       hmc6301_pdn.txt         % (power down the HMC6301)
-%sdr0.rffeRx.configure(10, '../../config/hmc6301_registers.txt');
+%
 
-% Read some parameters of the SDR in local variables
-nadc = sdr0.fpga.nadc;  % num of A/D converters
-ndac = sdr0.fpga.ndac;  % num of D/A converters
-nch = sdr0.nch;         % num of channels
+%sdr0.rffeRx.configure(10, '../../config/hmc6301_registers.txt');
+%sdr0.rffeRx.configure(2, '../../config/hmc6301_registers.txt');
+%sdr0.rffeRx.configure(3, '../../config/hmc6301_registers.txt');
+%sdr0.rffeRx.configure(4, '../../config/hmc6301_registers.txt');
