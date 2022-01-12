@@ -17,7 +17,7 @@ puts "INFO: Target part selected: '$part'"
 set_param board.repoPaths ./board_files
 create_project $design_name $project_dir -part $part -force
 
-set_property board_part xilinx.com:zcu111:part0:1.1 [current_project]
+set_property board_part xilinx.com:zcu111:part0:1.4 [current_project]
 
 # set up IP repo
 set_property ip_repo_paths $ip_dir [current_fileset]
