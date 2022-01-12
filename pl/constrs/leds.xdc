@@ -1,0 +1,16 @@
+set_property PACKAGE_PIN AR13     [get_ports "LED_0"];
+set_property IOSTANDARD  LVCMOS18 [get_ports "LED_0"];
+set_property PACKAGE_PIN AP13     [get_ports "LED_1"];
+set_property IOSTANDARD  LVCMOS18 [get_ports "LED_1"];
+set_property PACKAGE_PIN AR16     [get_ports "LED_2"];
+set_property IOSTANDARD  LVCMOS18 [get_ports "LED_2"];
+set_property PACKAGE_PIN AP16     [get_ports "LED_3"];
+set_property IOSTANDARD  LVCMOS18 [get_ports "LED_3"];
+set_property PACKAGE_PIN AP15     [get_ports "LED_4"];
+set_property IOSTANDARD  LVCMOS18 [get_ports "LED_4"];
+set_property PACKAGE_PIN AN16     [get_ports "LED_5"];
+set_property IOSTANDARD  LVCMOS18 [get_ports "LED_5"];
+set_property PACKAGE_PIN AN17     [get_ports "LED_6"];
+set_property IOSTANDARD  LVCMOS18 [get_ports "LED_6"];
+set_property PACKAGE_PIN AV15     [get_ports "LED_7"];
+set_property IOSTANDARD  LVCMOS18 [get_ports "LED_7"];

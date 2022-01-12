@@ -46,6 +46,10 @@ add_files -norecurse ./$project_dir/zcu111_rfsoc_trd.srcs/sources_1/bd/zcu111_rf
 set_property top zcu111_rfsoc_trd_wrapper [current_fileset]
 add_files -fileset constrs_1 -norecurse $constrs_dir/zcu111_rfsoc_trd_place.xdc
 add_files -fileset constrs_1 -norecurse $constrs_dir/zcu111_rfsoc_trd_timing.xdc
+add_files -fileset constrs_1 -norecurse $constrs_dir/leds.xdc
+add_files -fileset constrs_1 -norecurse $constrs_dir/spi_pins.xdc
+add_files -fileset constrs_1 -norecurse $constrs_dir/ddr_cons.xdc
+
 set_property used_in_synthesis false [get_files  $constrs_dir/zcu111_rfsoc_trd_timing.xdc]
 update_compile_order -fileset sources_1
 # set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 100 [get_runs synth_1]
@@ -97,8 +101,10 @@ if {[get_property PROGRESS [get_runs synth_1]] != "100%"} {
     } else {
         puts "PASS_MSG: Implementation finished Successfully"
 
-        file mkdir $proj_dir/$proj_name.sdk
-        write_hw_platform -fixed -force  -include_bit -file $proj_dir/$proj_name.sdk/${proj_name}_wrapper.xsa
+        #file mkdir $proj_dir/$proj_name.sdk
+        #write_hw_platform -fixed -force  -include_bit -file $proj_dir/$proj_name.sdk/${proj_name}_wrapper.xsa
+        write_hw_platform -fixed -force  -include_bit -file $proj_dir/${proj_name}_wrapper.xsa
+
         puts "PASS_MSG: XSA Generated Successfully"
 
     }
