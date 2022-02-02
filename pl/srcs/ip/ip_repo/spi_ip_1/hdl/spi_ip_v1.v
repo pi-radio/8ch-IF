@@ -92,7 +92,7 @@
 		.S_AXI_ARPROT(s_axi_arprot),
 		.S_AXI_ARVALID(s_axi_arvalid),
 		.S_AXI_ARREADY(s_axi_arready),
-		.S_AXI_RDATA(s_axi_rdata),
+		.S_AXI_RDATA(), // We will "hijack" s_axi_rdata
 		.S_AXI_RRESP(s_axi_rresp),
 		.S_AXI_RVALID(s_axi_rvalid),
 		.S_AXI_RREADY(s_axi_rready)
@@ -132,43 +132,68 @@
       por_reset_reg <= 1'b1; // Active HIGH reset
       release_por_reset <= 1'b0;
     end else begin
+      // Have we received an AXI Read request?
+      if (s_axi_rvalid == 1'b1 && s_axi_arvalid == 1'b1) begin
+        
+      end
       if (s_axi_wvalid == 1'b1 && s_axi_awvalid == 1'b1) begin
         // We have received an AXI command
         if (s_axi_awaddr == 4'h0) begin
-          // We have received an SPI write command
-          rd_req_reg <= 1'b0;
+          // We have received an SPI read/write command
           if (active_reg == 1'b1) begin
-            // This is bad. We have received an SPI write command too early
+            // This is bad. We have received an SPI read/write command too early
             spi_axi_error_reg <= 1'b1;
           end else begin
-            // We have received an SPI write commend, and we should service it
+            // We have received an SPI read/write commend, and we should service it
             active_reg <= 1'b1;
             release_por_reset <= 1'b1; // release in the next clock
             chip_index_reg <= s_axi_wdata[3:0];
             chip_type_reg <= s_axi_wdata[31:28];
             
             if (s_axi_wdata[31:28] == 4'd0) begin
-              // This is an ADI HMC 6300 chip
+              // This is an ADI HMC 6300 chip: Write
+              rd_req_reg <= 1'b0;
               addr_reg <= s_axi_wdata[27:10];
               wr_data_reg <= 16'd0;
               addr_width_m1_reg <= 5'd17;
               data_width_m1_reg <= 5'd0;
+              chip_type_reg <= 4'd0;
             end else if (s_axi_wdata[31:28] == 4'd1) begin
-              // This is an ADI HMC6301 chip
+              // This is an ADI HMC6301 chip: Write
+              rd_req_reg <= 1'b0;
               addr_reg <= s_axi_wdata[27:10];
               wr_data_reg <= 16'd0;
               addr_width_m1_reg <= 5'd17;
               data_width_m1_reg <= 5'd0;
+              chip_type_reg <= 4'd1;
             end else if (s_axi_wdata[31:28] == 4'd2) begin
-              // This is a TI LMX chip
+              // This is a TI LMX chip: Write
+              rd_req_reg <= 1'b0;
               addr_reg <= s_axi_wdata[27:20];
               wr_data_reg <= s_axi_wdata[19:4];
               addr_width_m1_reg <= 5'd7;
               data_width_m1_reg <= 5'd15;
-            end else if (s_axi_wdata[31:28] == 4'd3) begin
+              chip_type_reg <= 4'd2;
+            end else if (s_axi_wdata[31:28] == 4'd8) begin
+              // This is an ADI HMC 6300 chip: Read
+              rd_req_reg <= 1'b1;
+              addr_reg <= s_axi_wdata[27:10];
+              wr_data_reg <= 16'd0;
+              addr_width_m1_reg <= 5'd17;
+              data_width_m1_reg <= 5'd0;
+              chip_type_reg <= 4'd0;
+           end else if (s_axi_wdata[31:28] == 4'd9) begin
+              // This is an ADI HMC 6301 chip: Read
+              rd_req_reg <= 1'b1;
+              addr_reg <= s_axi_wdata[27:10];
+              wr_data_reg <= 16'd0;
+              addr_width_m1_reg <= 5'd17;
+              data_width_m1_reg <= 5'd0;
+              chip_type_reg <= 4'd1;
+            end else if (s_axi_wdata[31:28] == 4'd14) begin
               // This is a control command for the BB switches
               switch_reg <= s_axi_wdata[3:0];
-            end else if (s_axi_wdata[31:28] == 4'd4) begin
+            end else if (s_axi_wdata[31:28] == 4'd15) begin
               // This is to control the LEDs on the RFSoC (PL side)
               led_reg <= s_axi_wdata[7:0];
             end else begin
@@ -230,7 +255,7 @@
     .SENb(SENb_wire),
     .SCLK(spi_clk_wire),
     .oe(),
-    .rd_data_wire(),
+    .rd_data_wire(s_axi_rdata),
     .addr(addr_reg),
     .wr_data(wr_data_reg),
     .done(done_wire),

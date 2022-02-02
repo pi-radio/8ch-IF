@@ -43,6 +43,24 @@ classdef HMC6301 < matlab.System
             end
         end
         
+        function regRead(obj, rxIndex, regIndex)
+            % regIndex = 0: 00
+            % regIndex = 1: 80
+            % regIndex = 2: 40 ...
+            % regIndex = 31: f8
+            % The command is as follows:
+            %   '9'     : Read a reg for HMC6300
+            %   'ff'    : The 'write' data is irrelevant
+            %   'pq'    : Two nibbles of the address from addrblob
+            %   'c0'    : The "chip address" as per the datasheet
+            %   'n'     : The HMC chip index on the Pi-Radio board
+            %addrblob = '008040c020a060e0109050d030b070f0088848c828a868e8189858d838b878f8';
+            addrblob = '018141c121a161e1119151d131b171f1098949c929a969e9199959d939b979f9';
+			write(obj.socket, sprintf('%s%s%s%s%s%s', '9', 'ff', ...
+                addrblob(regIndex*2+1), addrblob(regIndex*2+2), ...
+                'c0', string(rxIndex-1)));
+		end
+        
         function configure(obj, rxIndex, file)
             filestr = fileread(file);
             filebyline = regexp(filestr, '\n', 'split');

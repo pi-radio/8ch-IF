@@ -36,7 +36,7 @@ localparam state_done         = 4'd6; // We are done.
 localparam state_adi_rw_wait  = 4'd7; // Pull up SENb and then pull it down again
 
 reg[15:0]   rd_data;
-reg[3:0]    clock_state;
+reg[5:0]    clock_state;
 reg         SCLK_reg;
 reg         SENb_reg;
 reg[3:0]    state;
@@ -73,7 +73,7 @@ assign done = (state == state_done)? 1'b1 : 1'b0;
 always @(posedge clk) begin
   if (reset == 1'b1) begin
     // Reset things
-    clock_state <= 3'd0;
+    clock_state <= 6'd0;
     SENb_reg <= 1'b1;
     SCLK_reg <= 1'b0;
     
@@ -84,7 +84,7 @@ always @(posedge clk) begin
     end
       
     bit_index <= addr_width_m1; // Was 4'd15;
-    rd_data <= 16'h00;          // Up to 16 bits. 8 or 16 bits are used
+    //rd_data <= 16'h00;          // Up to 16 bits. 8 or 16 bits are used
     SDO_reg <= 1'b0;
     wait_count <= 4'd0;
     oe_reg <= 1'b1;
@@ -101,13 +101,13 @@ always @(posedge clk) begin
     SDO_reg <= 1'b0;
     SCLK_reg <= 1'b0;
     SENb_reg <= 1'b1;
-    clock_state <= 3'd0;
+    clock_state <= 6'd0;
   end else begin
     clock_state <= clock_state + 1;
     
     case(clock_state)
     
-      4'd0: begin
+      6'd0: begin
         case (state)
           state_wrreg_wraddr: begin
             SENb_reg <= 1'b0;
@@ -138,6 +138,7 @@ always @(posedge clk) begin
               
           state_rdreg_wraddr: begin
             SENb_reg <= 1'b0;
+            rd_data <= 16'h0;
             
             if ((bit_index == addr_width_m1) && (addr_width_m1 != 5'd17)) // Write the first bit as 1 only for TI chips
               SDO_reg <= 1'b1;
@@ -166,7 +167,7 @@ always @(posedge clk) begin
         endcase // state
       end // clock_state == 4'd0
       
-      4'd2: begin
+      6'd8: begin
         // Keep SDO_reg unchanged to meet the hold requirement.
         SCLK_reg <= 1'b1;
         case (state)
@@ -180,24 +181,24 @@ always @(posedge clk) begin
             end
           end
         endcase
-      end // clock_state == 4'd2
+      end // clock_state == 6'd8
       
-      4'd4: begin
+      6'd16: begin
         SDO_reg <= 1'b0;
-      end // clock_state == 4'd4
+      end // clock_state == 6'd16
       
-      4'd6: begin
-      end // clock_state == 4'd6
+      6'd24: begin
+      end // clock_state == 6'd24
       
-      4'd8: begin
-      end // clock_state == 4'd8
+      6'd32: begin
+      end // clock_state == 6'd32
       
-      4'd10: begin
+      6'd40: begin
         // Trigger the negative edge of the clock
         SCLK_reg <= 1'b0;
-      end // clock_state == 3'd10
+      end // clock_state == 6'd40
       
-      4'd12: begin
+      6'd48: begin
         case (state)
           state_wait_onetick: begin
             state <= state_done;
@@ -210,39 +211,40 @@ always @(posedge clk) begin
             if (rw_wait_count == 3'd0) begin
                 SENb_reg <= 1'b0;   // Pull SENb back down low
                 state <= state_rdreg_rddata;
+                bit_index <= 5'd7; // We will need to read 8 bits now
             end else begin
                 SENb_reg <= 1'b1;   // Pull SENb high temporarily
             end
           end
         endcase
-      end // clock_state == 4'd12
+      end // clock_state == 6'd48
       
-      4'd14: begin
-      end // clock_state == 4'd14
+      6'd56: begin
+      end // clock_state == 6'd56
       
-      4'd1: begin
-      end // clock_state == 4'd1
+      6'd4: begin
+      end // clock_state == 6'd4
       
-      4'd3: begin
-      end // clock_state == 4'd3
+      6'd12: begin
+      end // clock_state == 6'd12
       
-      4'd5: begin
-      end // clock_state == 4'd5
+      6'd20: begin
+      end // clock_state == 6'd20
       
-      4'd7: begin
-      end // clock_state == 4'd7
+      6'd28: begin
+      end // clock_state == 6'd28
       
-      4'd9: begin
-      end // clock_state == 4'd9
+      6'd36: begin
+      end // clock_state == 6'd36
       
-      4'd11: begin
-      end // clock_state == 4'd11
+      6'd44: begin
+      end // clock_state == 6'd44
       
-      4'd13: begin
-      end // clock_state == 4'd13
+      6'd52: begin
+      end // clock_state == 6'd52
       
-      4'd15: begin
-      end // clock_state == 4'd15
+      6'd60: begin
+      end // clock_state == 6'd60
       
     endcase // clock_State
             

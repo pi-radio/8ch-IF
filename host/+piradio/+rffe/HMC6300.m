@@ -80,6 +80,23 @@ classdef HMC6300 < matlab.System
                 write(obj.socket, sprintf('%s%s%s', '0', 'ff22c0', string(txIndex-1)));
             end
         end
+
+		function regRead(obj, txIndex, regIndex)
+            % regIndex = 0: 00
+            % regIndex = 1: 80
+            % regIndex = 2: 40 ...
+            % regIndex = 31: f8
+            % The command is as follows:
+            %   '8'     : Read a reg for HMC6300
+            %   '00'    : The 'write' data is irrelevant
+            %   'pq'    : Two nibbles of the address from addrblob
+            %   'c0'    : The "chip address" as per the datasheet
+            %   'n'     : The HMC chip index on the Pi-Radio board
+            addrblob = '008040c020a060e0109050d030b070f0088848c828a868e8189858d838b878f8';
+			write(obj.socket, sprintf('%s%s%s%s%s%s', '8', 'ff', ...
+                addrblob(regIndex*2+1), addrblob(regIndex*2+2), ...
+                'c0', string(txIndex-1)));
+		end
         
         function attn(obj, ifAttn, rfAttn)
             % This function control the RF and IF attenuation.

@@ -24,7 +24,7 @@ f112c0
 %      08dB: c1d2c0
 %      12dB: c3d2c0
 %      15dB: cfd2c0
-c0d2c0
+cfd2c0
 0032c0
 00b2c0
 0072c0

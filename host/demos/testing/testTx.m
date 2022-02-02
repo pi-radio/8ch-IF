@@ -3,7 +3,7 @@
 
 % Generate the data
 nFFT = 1024;	% number of FFT points
-txPower = 10000*0;
+txPower = 10000*1;
 scMin = 200;
 scMax = 200;
 constellation = [1+1j 1-1j -1+1j -1-1j];
@@ -27,14 +27,14 @@ sdr0.send(txtd);
 %% Receive data
 
 % Configure the Switches
-sdr0.set_switches("normal");
+%sdr0.set_switches("normal");
 
 nFFT = 1024;
 nskip = 1024*3;	% skip ADC data
 nbatch = 100;	% num of batches
 
 
-for ind = 1:3
+for ind = 1:50
     rxtd = sdr0.recv(nFFT, nskip, nbatch);
 end
 

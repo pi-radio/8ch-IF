@@ -120,16 +120,16 @@ classdef FullyDigital < matlab.System
         end
         
         function set_leds(obj, led_string)
-            write(obj.socket, sprintf("400000%s", led_string));
+            write(obj.socket, sprintf("f00000%s", led_string));
         end
         
         function set_switches(obj, switch_string)
             if switch_string == "normal"
-                write(obj.socket, "3000000c");
+                write(obj.socket, "e000000c");
             elseif switch_string == "testTxArray"
-                write(obj.socket, "30000006");
+                write(obj.socket, "e0000006");
             elseif switch_string == "testRxArray"
-                write(obj.socket, "30000009");
+                write(obj.socket, "e0000009");
             else
                 fprintf("Error. Unrecognized switch_string\n");
             end
