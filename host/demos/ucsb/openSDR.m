@@ -23,7 +23,7 @@ sdr0.lo.configure('../../config/lmx_registers_58ghz_for_v3.txt');
 %   The second parameter is the file name:
 %       hmc6300_registers.txt   % (configure for external LO and power on)
 %       hmc6300_pdn.txt         % (power down the HMC6300)
-%sdr0.rffeTx.configure(10, '../../config/hmc6300_registers.txt');
+sdr0.rffeTx.configure(9, '../../config/hmc6300_registers_low_power.txt');
 
 % Configure the HMC6301 RX chips on the Pi-Radio v3 transceiver board.
 %   The first parameter is the RX index:

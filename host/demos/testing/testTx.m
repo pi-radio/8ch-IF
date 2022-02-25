@@ -34,7 +34,7 @@ nskip = 1024*3;	% skip ADC data
 nbatch = 100;	% num of batches
 
 
-for ind = 1:50
+for ind = 1:3
     rxtd = sdr0.recv(nFFT, nskip, nbatch);
 end
 

@@ -125,11 +125,13 @@ classdef FullyDigital < matlab.System
         
         function set_switches(obj, switch_string)
             if switch_string == "normal"
-                write(obj.socket, "e000000c");
-            elseif switch_string == "testTxArray"
+                write(obj.socket, "e0000003");
+            elseif switch_string == "calTxArray"
                 write(obj.socket, "e0000006");
-            elseif switch_string == "testRxArray"
+            elseif switch_string == "calRxArray"
                 write(obj.socket, "e0000009");
+            elseif switch_string == "off"
+                write(obj.socket, "e0000000");
             else
                 fprintf("Error. Unrecognized switch_string\n");
             end

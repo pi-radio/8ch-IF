@@ -54,6 +54,20 @@ Navigate to the `apu` folder.
 $ petalinux-package --bsp -p plnx --clean --output piradio_plnx.bsp --force
 ```
 
+Create a helper file sd_prepare.sh in the apu/plnx/images/linux directory with the following contents:
+```console
+echo "About to call petalinux-package"
+petalinux-package --force --boot --fsbl zynqmp_fsbl.elf --pmufw pmufw.elf --u-boot u-boot.elf
+echo "Finished with petalinux-package"
+# Make sure to put the correct path for bootgen that's included as a part of the Petalinux installation
+echo "About to call bootgen"
+/home/aditya/Petalinux/Petalinux-2020.2/components/yocto/buildtools/sysroots/x86_64-petalinux-linux/usr/bin/bootgen -image bitstream.bif -arch zynqmp -o zcu111_rfsoc_trd_wrapper.bit.bin -w
+echo "Finsihed with bootgen"
+cp pl.dtbo zcu111_rfsoc_trd_wrapper.bit.bin ../../../../sdcard/mts
+cp BOOT.BIN image.ub boot.scr ../../../../sdcard
+echo "Manually copy files from ../../../../sdcard onto the actual SD card"
+```
+
 ## More information
 * For more information on installing the Petalinux please refer to this [documentation](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2020_2/ug1144-petalinux-tools-reference-guide.pdf).
 * For more information on building the Petalinux image please refer to this [guide](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/571605227/Petalinux+Build+Tutorial+for+ZU+RFSoC+ZCU111+2020.1).
