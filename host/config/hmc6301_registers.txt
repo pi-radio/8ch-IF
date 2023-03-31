@@ -6,14 +6,14 @@
 %      06dB: 2883c0
 %      12dB: 1883c0
 %      18dB: 3883c0
-3883c0
+0883c0
 % Below is REGISTER2 used for BB Attenuation
 % Values are as follows:
 %      00dB: 0043c0
 %      06dB: 8043c0
 %      12dB: 4043c0
 %      18dB: c043c0
-c043c0
+0043c0
 c0c3c0
 f923c0
 % Below is REGISTER5 for IF Attenuation
