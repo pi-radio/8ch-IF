@@ -10,9 +10,9 @@
 % TCP server running on the ARM. The server configures the RF front-end and
 % the ADC flow control.
 %
-% Last update on Nov 23, 2021
+% Last update on Mar 23, 2023
 %
-% Copyright @ 2021
+% Copyright @ 2023
 %
 classdef FullyDigital < matlab.System
     properties
@@ -20,13 +20,15 @@ classdef FullyDigital < matlab.System
         socket;			% TCP socket to control the Pi-Radio platform
         fpga;			% FPGA object
         lo;             % LO object (TI LMX 2595)
+        ltc;            % ADI LTC5594 chips
         rffeTx;         % ADI HMC6300 chips
         rffeRx;         % ADI HMC6301 chips
+        obsCtrl;        % Self observation pathway
         isDebug;		% if 'true' print debug messages
         
         nch = 8;		% number of channels
         figNum;         % Figure number to plot waveforms for this SDR
-        fc = 135e9;     % carrier frequency of the SDR in Hz
+        fc = 60e9;     % carrier frequency of the SDR in Hz
         name;           % Unique name for this transceiver board
     end
     
@@ -45,6 +47,8 @@ classdef FullyDigital < matlab.System
             % Create the RFSoC object
             obj.fpga = piradio.fpga.RFSoC('ip', obj.ip, 'isDebug', obj.isDebug);
             obj.lo = piradio.rffe.LMX2595('socket', obj.socket, 'name', obj.name);
+            obj.obsCtrl = piradio.rffe.ObsCtrl('socket', obj.socket, 'name', obj.name);
+            obj.ltc = piradio.rffe.LTC5594('socket', obj.socket, 'name', obj.name);
             obj.rffeTx = piradio.rffe.HMC6300('socket', obj.socket);
             obj.rffeRx = piradio.rffe.HMC6301('socket', obj.socket);
             
@@ -55,6 +59,7 @@ classdef FullyDigital < matlab.System
         function delete(obj)
             % Destructor.
             clear obj.fpga obj.lo obj.rffeTx obj.rffeRx;
+            clear obj.ltc;
             
             % Close TCP connection.
             obj.disconnect();

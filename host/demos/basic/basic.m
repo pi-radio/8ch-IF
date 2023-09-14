@@ -5,7 +5,7 @@
 addpath('../../');
 
 % Parameters
-ip = "10.1.1.43";	% IP Address
+ip = "192.168.1.101";	% IP Address
 isDebug = true;		% print debug messages
 
 % Create a Fully Digital SDR
