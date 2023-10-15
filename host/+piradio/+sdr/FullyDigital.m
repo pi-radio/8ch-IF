@@ -30,6 +30,12 @@ classdef FullyDigital < matlab.System
         figNum;         % Figure number to plot waveforms for this SDR
         fc = 60e9;     % carrier frequency of the SDR in Hz
         name;           % Unique name for this transceiver board
+
+        % Cal Factors
+        calTxDelay;
+        calRxDelay;
+        calTxPhase;
+        calRxPhase;
     end
     
     methods
@@ -54,6 +60,11 @@ classdef FullyDigital < matlab.System
             
             figure(obj.figNum);
             clf;
+
+            obj.calTxDelay = zeros(1, obj.nch);
+            obj.calRxDelay = zeros(1, obj.nch);
+            obj.calTxPhase = zeros(1, obj.nch);
+            obj.calRxPhase = zeros(1, obj.nch);
         end
         
         function delete(obj)
@@ -98,7 +109,7 @@ classdef FullyDigital < matlab.System
                 scs = linspace(-n/2, n/2-1, n);
                 subplot(8,4,rxIndex+24);
                 plot(scs, mag2db(abs(fftshift(fft(data(:,1,rxIndex))))));
-                ylim([40 140]);
+                ylim([40 160]);
                 grid on;
             end
         end
@@ -127,14 +138,45 @@ classdef FullyDigital < matlab.System
         function set_leds(obj, led_string)
             write(obj.socket, sprintf("f00000%s", led_string));
         end
+
+        function opBlob = fracDelay(obj, ipBlob,fracDelayVal,N)
+            taps = zeros(0,0);
+            for index=-100:100
+                delay = index - fracDelayVal;
+                taps = [taps sinc(delay)];
+            end
+            x = [ipBlob; ipBlob];
+            x = x';
+            y = conv(taps, x);
+            opBlob = y(N/2 : N/2 + N - 1);
+            opBlob = opBlob';
+        end % fracDelay
+
+        function blob = applyCalRxArray(obj, rxtd)
+            blob = zeros(size(rxtd));
+            for rxIndex=1:obj.nch
+                for itimes=1:size(rxtd, 2)
+                    td = rxtd(:, itimes, rxIndex);
+                    td = obj.fracDelay(td, obj.calRxDelay(rxIndex), size(td, 1));
+                    td = td * exp(1j * obj.calRxPhase(rxIndex));
+                    blob(:, itimes, rxIndex) = td;
+                end % itimes
+            end % rxIndex
+        end % function applyCalRxArray
+        
+        function blob = applyCalTxArray(obj, txtd)
+            blob = zeros(size(txtd));
+            for txIndex=1:obj.nch
+                td = txtd(:, txIndex);
+                td = obj.fracDelay(td, obj.calTxDelay(txIndex), size(td, 1));
+                td = td * exp(1j * obj.calTxPhase(txIndex));
+                blob(:, txIndex) = td;
+            end % txIndex
+        end % function applyCalTxArray
         
         function set_switches(obj, switch_string)
-            if switch_string == "normal"
-                write(obj.socket, "e0000003");
-            elseif switch_string == "calTxArray"
-                write(obj.socket, "e0000006");
-            elseif switch_string == "calRxArray"
-                write(obj.socket, "e0000009");
+            if switch_string == "on"
+                write(obj.socket, "e0000001");
             elseif switch_string == "off"
                 write(obj.socket, "e0000000");
             else

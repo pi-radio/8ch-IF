@@ -96,7 +96,7 @@ classdef RFSoC < matlab.System
             % Create the complex samples for each ADC. The data are being
             % stored sequentially for all ADCs for each I/Q
             for iadc = 1:obj.nadc
-                rxtd(:,iadc) = reshape(data(:,(2*iadc-1):2*obj.nadc:end) + ...
+                rxtd(:,iadc) = reshape(data(:,(2*iadc-1):2*obj.nadc:end) - ...
                     1j*data(:,2*iadc:2*obj.nadc:end), [], 1);
             end
         end
