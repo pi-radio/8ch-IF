@@ -44,7 +44,10 @@ module axis_flow_ctrl_v1_0 #
 	output m_axis_tlast,
 	
 	// AXI ADC Control
-	input adc_control
+	input adc_control,
+	
+	// DAC synchronization
+	input dac_boundary_wire
 );
 
 	wire [C_S00_AXI_DATA_WIDTH-1:0] tdata_read;
@@ -80,39 +83,58 @@ module axis_flow_ctrl_v1_0 #
 		.tdata_skip(tdata_skip),
 		.tdata_nbytes(tdata_nbytes)
 	);
-	reg flag;
+	reg flag; // This is a stop flag
 	reg [31:0] cntr;
 	reg [31:0] byte_cntr;
-//	assign s_axis_tready = adc_control && m_axis_tready;
+	
+	reg dac_boundary_reg;
+	
 	assign s_axis_tready = 1'b1;
 	assign m_axis_tdata = s_axis_tdata;
-//	assign m_axis_tvalid = adc_control && s_axis_tvalid && ((cntr < tdata_read) || (tdata_read == 32'h0000_0000));
 	assign m_axis_tvalid = (~flag) && adc_control && axis_aresetn && ((cntr < tdata_read) || (tdata_read == 32'h0000_0000));
 	
-	always @ (posedge axis_aclk or negedge axis_aresetn) begin
-		if (~axis_aresetn) begin
-			cntr <= 32'h0000_0000;		
+	reg [9:0] dac_counter; // This will synchronize to 1024 clock cycles
+	always @ (posedge axis_aclk) begin
+
+        dac_boundary_reg <= dac_boundary_wire;
+        if ((dac_boundary_reg == 1'b0) && (dac_boundary_wire == 1'b1)) begin // We have a rising edge from the DAC synch
+            dac_counter <= 0;
+        end
+        else begin
+            dac_counter <= dac_counter + 10'b00_0000_0001;
+        end
+		
+    end
+	
+    always @ (posedge axis_aclk or negedge axis_aresetn) begin
+        if (~axis_aresetn) begin
+            cntr <= 32'h0000_0000;		
 			byte_cntr <= 32'h0000_0000;
-			flag <= 1'b0;	
+			flag <= 1'b1; // Don't start sending data through immediately after reset is removed	
 		end
-		else if (adc_control) begin
-			if (m_axis_tlast || (cntr == (tdata_read + tdata_skip - 1'b1))) begin
-				cntr <= 32'h0000_0000;		
-			end
-			else begin
-				cntr <= cntr + 32'h0000_00001;
-			end
-			
-			if (byte_cntr == tdata_nbytes) begin
-				byte_cntr <= 32'h0000_0000;		
-			end
-			else if (m_axis_tvalid) begin
-				byte_cntr <= byte_cntr + (C_AXIS_DWIDTH>>3);
-			end
-			
-			flag <= flag || m_axis_tlast;
+		else if ((adc_control) && (flag == 1)) begin
+            if (dac_counter == 0) begin
+                flag = 0; // Now you can start sending it through
+            end
 		end
-	end
+		else if ((adc_control) && (flag == 0)) begin
+            if (m_axis_tlast || (cntr == (tdata_read + tdata_skip - 1'b1))) begin
+                cntr <= 32'h0000_0000;		
+            end
+            else begin
+                cntr <= cntr + 32'h0000_00001;
+            end
+        
+            if (byte_cntr == tdata_nbytes) begin
+                byte_cntr <= 32'h0000_0000;		
+            end
+            else if (m_axis_tvalid) begin
+                byte_cntr <= byte_cntr + (C_AXIS_DWIDTH>>3);
+            end
+			
+            flag <= flag || m_axis_tlast;
+        end
+    end
 	
 	assign m_axis_tlast = (byte_cntr == (tdata_nbytes - (C_AXIS_DWIDTH>>3)));
 endmodule
