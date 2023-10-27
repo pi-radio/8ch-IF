@@ -48,7 +48,7 @@ classdef LMX2595 < matlab.System
                     %fprintf('.');
                     c = a{1}{2};
                     s = sprintf('%s%s%s', '2', c(3:8), '0');
-                    fprintf('%s\n', s);
+                    %fprintf('%s\n', s);
                     write(obj.socket, s)
                 end
             end

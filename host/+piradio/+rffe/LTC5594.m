@@ -44,12 +44,26 @@ classdef LTC5594 < matlab.System
                 if (strcmp(b(1:1), '%') == 1)
                     % Ignore the comment line in the commands file
                 else
-                    fprintf('LTC5594 configuration: Line %d: ', i);
-                    %fprintf('.');
+                    %fprintf('LTC5594 configuration: Line %d: ', i);
+                    fprintf('.');
                     c = a{1}{2};
-                    s = sprintf('%s%s%s%s', '3', c(3:6), '00', string(txIndex-1));
-                    fprintf('%s\n', s);
-                    write(obj.socket, s)
+
+                    ltcTx = '01234567';
+                    if (txIndex == 10)
+                        for iltc = ltcTx
+                            s = sprintf('%s%s%s%s', '3', c(3:6), '00', iltc);
+                            %fprintf('%s\n', s);
+                            fprintf('.');
+                            write(obj.socket, s)
+                            pause (0.01);
+                        end
+                    else
+                        s = sprintf('%s%s%s%s', '3', c(3:6), '00', string(txIndex-1));
+                        %fprintf('%s\n', s);
+                        fprintf('.');
+                        write(obj.socket, s)
+                        pause (0.01);
+                    end
                 end
             end
             fprintf('\n');
