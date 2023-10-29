@@ -18,9 +18,9 @@ end
 txfd = fftshift(txfd);
 txtd = ifft(txfd);
 m = max(abs(txtd));
-txtd = txtd / m * 5000;
+txtd = txtd / m * 200;
 
-naod = 21;
+naod = 41;
 aods = linspace(-1, 1, naod);
 
 pArray = zeros(1, naod);
@@ -30,15 +30,15 @@ for iaod = 1:naod
     fprintf('.');
     txtdMod = zeros(nFFT, sdr0.nch);
     aod = aods(iaod);
+    rad2deg(aod)
     for txIndex=1:sdr0.nch
         txtdMod(:, txIndex) = txtd * exp(1j*txIndex*pi*sin(aod)); % Apply BF
     end
     txtdMod = sdr0.applyCalTxArray(txtdMod);
     sdr0.send(txtdMod);
 
-    rxtd = sdr0.recv(nread, nskip, ntimes);
-    rxtd = sdr0.applyCalRxArray(rxtd);
-    
+    rxtd = sdr1.recv(nread, nskip, ntimes);
+        
     for itimes = 1:ntimes
         refRxIndex = 1;
         fd = fftshift(fft(rxtd(:, itimes, refRxIndex)));
@@ -57,9 +57,10 @@ grid on; grid minor;
 ylim([-20 0])
 
 % Stop transmitting and do a dummy read
-%txtd = zeros(nFFT, sdr0.nch);
-%sdr0.send(txtd);
-%sdr0.recv(nread, nskip, ntimes);
+txtd = zeros(nFFT, sdr0.nch);
+sdr0.send(txtd);
+sdr0.recv(nread, nskip, ntimes);
+sdr0.recv(nread, nskip, ntimes);
 
 % Clear workspace variables
 clear aoa aoas fd iaoa naoa p pArray refTxIndex td tdbf txtdMod;

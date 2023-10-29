@@ -1,51 +1,63 @@
-%% CALIBRATIONS
+%% TWO-NODE CALIBRATIONS
+
+% In this example, sdr0 is the node under calibration.
+% The "helper" is sdr1.
 
 % To perform calibration, first configure the hardware to operate
-% at 55 GHz. The self-cal requires this frequency.
+% at 58 GHz. The self-cal requires this frequency.
 
 addpath('../../');
 addpath('../../helper');
-
-ip = "10.1.1.43";	% IP Address
 isDebug = false;		% print debug messages
 
+ip = "10.1.1.43";	% IP Address
 sdr0 = piradio.sdr.FullyDigital('ip', ip, 'isDebug', isDebug, ...
     'figNum', 100, 'name', 'lamarr-rev3.1-0001');
 
-sdr0.fpga.configure('../../config/rfsoc_55ghz.cfg');
+ip = "10.1.1.44";	% IP Address
+sdr1 = piradio.sdr.FullyDigital('ip', ip, 'isDebug', isDebug, ...
+    'figNum', 101, 'name', 'lamarr-rev3.1-0002');
+
+sdr0.fpga.configure('../../config/rfsoc.cfg');
+sdr1.fpga.configure('../../config/rfsoc.cfg');
 
 sdr0.lo.configure('../../config/lmx_pdn.txt');
-sdr0.lo.configure('../../config/lmx_hedy_lamarr_55ghz.txt');
+sdr1.lo.configure('../../config/lmx_pdn.txt');
+sdr0.lo.configure('../../config/lmx_hedy_lamarr_58ghz.txt');
+sdr1.lo.configure('../../config/lmx_hedy_lamarr_58ghz.txt');
 
 % Power down all LTC5594 and HMC630x chips
 sdr0.ltc.configure(10, '../../config/ltc5594_pdn.txt');
+sdr1.ltc.configure(10, '../../config/ltc5594_pdn.txt');
 sdr0.rffeTx.configure(10, '../../config/hmc6300_pdn.txt');
+sdr1.rffeTx.configure(10, '../../config/hmc6300_pdn.txt');
 sdr0.rffeRx.configure(10, '../../config/hmc6301_pdn.txt');
+sdr1.rffeRx.configure(10, '../../config/hmc6301_pdn.txt');
 
-sdr0.set_switches('on');
+sdr0.set_switches('off');
+sdr1.set_switches('off');
 
-% Bring up all TX channels
+% Bring up all TX and RX channels on sdr0
 sdr0.ltc.configure(10, '../../config/ltc5594_pup.txt');
 sdr0.rffeTx.configure(10, '../../config/hmc6300_registers.txt');
-
-% Bring up all RX channels
 sdr0.rffeRx.configure(10, '../../config/hmc6301_registers.txt');
+
+% Bring up the reference TX and RX channel on sdr1
+refTxIndex = 1;
+refRxIndex = 1;
+sdr1.ltc.configure(refTxIndex, '../../config/ltc5594_pup.txt');
+sdr1.rffeTx.configure(refTxIndex, '../../config/hmc6300_registers.txt');
+sdr1.rffeRx.configure(refRxIndex, '../../config/hmc6301_registers.txt');
 
 clear ip isDebug;
 
-
 %% Calibrate of the RX array
 
-% Pick a reference TX channel
-txChId = 1;
 
 nFFT = 1024;
 nread = nFFT;
 nskip = 1024*3;	% skip ADC data
 ntimes = 100;	% num of batches to read
-
-
-rxtd = sdr0.recv(nFFT, nskip, ntimes);
 
 % Generate the TX waveform
 scMin = -400;
@@ -97,7 +109,7 @@ for expType = 1:3
        
         % Scale and send the signal
         txtd = txtd/m*15000;
-        sdr0.send(txtd);
+        sdr1.send(txtd); % The "helper" sdr1 does the transmitting
         
         % Receive the signal
         rxtd = sdr0.recv(nread,nskip,ntimes);
@@ -142,7 +154,6 @@ for expType = 1:3
     
     % Calculate the fractional and integer timing offsets
     cols = 'mrgbcykm'; % Colors for the plots
-    %maxPos(1,:,:) = maxPos(1,:,:) - maxPos(1,:,:); % For rxIndex=1, everything should be 0
     figure(3);
     for rxIndex=1:sdr0.nch
         
@@ -219,6 +230,12 @@ for expType = 1:3
     end % rxIndex
 end % expType
 
+% Stop the "helper" sdr1 transmission and do a dummy read at sdr0
+txtd = zeros(nFFT, sdr1.nch);
+sdr1.send(txtd);
+pause(1);
+rxtd = sdr0.recv(nread, nskip, ntimes);
+
 % Clear workspace variables
 clear constellation expType iter maxPos maxVal nFFT niter rxtd scIndex;
 clear scMin scMax txfd txIndex txtd m nread nskip nsamp ntimes;
@@ -227,79 +244,8 @@ clear to tos val cols diffMatrix resTimingErrors toff vec medianIndex;
 clear intPeakPos intpos c lRef lTx pk ar intPos l ph lRx rxIndex;
 clear pdpStore txChId;
 
-%% Debug the self-observation to self-interference ratio.
 
-nFFT = 1024;
-nread = nFFT;
-nskip = nFFT*5;
-ntimes = 50;
-scaleFactor = 10000;
-
-% Generate the TX waveform
-scMin = -400;
-scMax = 400;
-constellation = [1+1j 1-1j -1+1j -1-1j];
-txfd = zeros(nFFT, sdr0.nch);
-
-maxArray = zeros(2, sdr0.nch, sdr0.nch); % expType, TX, RX
-
-for txIndex = 1:8
-    txtd = zeros(nFFT, sdr0.nch);
-
-    for scIndex = scMin:scMax
-        if scIndex ~= 0
-            txfd(nFFT/2 + 1 + scIndex, txIndex) = constellation(randi(4));
-        end
-    end
-
-    txfd(:, txIndex) = fftshift(txfd(:, txIndex));
-    txtd(:, txIndex) = ifft(txfd(:, txIndex)) * scaleFactor;
-
-    sdr0.send(txtd);
-
-    for expType = 1:2
-
-        if expType == 1
-            sdr0.set_switches('off');
-        else
-            sdr0.set_switches('on');
-        end
-        pause(0.5);
-
-        rxtd = sdr0.recv(nread, nskip, ntimes);
-        for rxIndex = 1:8
-            corr_fd = txfd(:, txIndex) .* conj(fft(rxtd(:, 1, rxIndex)));
-            corr_td = mag2db(abs(ifft(corr_fd)));
-            maxArray(expType, txIndex, rxIndex) = max(corr_td);            
-            %figure(1); clf; plot(corr_td);
-        end
-    end
-end
-
-% Figure out the bext RX index for TX array cal
-clc;
-a = zeros(sdr0.nch, sdr0.nch);
-for txIndex = 1:8
-    for rxIndex = 1:8
-        a(txIndex, rxIndex) = maxArray(2, txIndex, rxIndex) - maxArray(1, txIndex, rxIndex);
-
-        % Remove this block.
-        % This is because Aditya's board RX channel 2 is dead, haha.
-        if rxIndex == 2
-            a(txIndex, rxIndex) = 0;
-        end
-
-    end
-end
-b = min(a);
-[val, refRxIndex] = max(min(a));
-a
-
-clear b constellation corr_fd corr_td expType maxArray nFFT nread;
-clear nskip ntimes rxIndex rxtd scaleFactor scIndex scMin scMax txfd;
-clear txIndex txtd val;
-
-%% Figure out what scaling to use at the TX for TX self-cal
+%% Figure out what scaling to use at the TX to cal the TX array
 clc;
 nFFT = 1024;
 nread = nFFT; % read ADC data for 256 cc (4 samples per cc)
@@ -326,7 +272,7 @@ for expType = 1:2
         txtd = txtd * 10000 * sf(txIndex);
         sdr0.send(txtd);
     
-        rxtdOriginal = sdr0.recv(nread, nskip, ntimes);
+        rxtdOriginal = sdr1.recv(nread, nskip, ntimes);
 
         for itimes = 1:ntimes
             rxtd = rxtdOriginal(:, itimes, refRxIndex);
@@ -361,13 +307,19 @@ for expType = 1:2
     end % txIndex
 end % expType loop
 
+% Stop the sdr0 transmissions and do a dummy read at sdr1
+txtd = zeros(nFFT, sdr0.nch);
+sdr0.send(txtd);
+pause(1);
+rxtd = sdr1.recv(nread, nskip, ntimes);
+
 clear acc constellation corr_fd corr_td expType itimes nFFT nread nskip;
 clear ntimes pdpStore rxfd rxtd rxtdOriginal scIndex;
 clear scMin scMax txChId txfd txIndex txtd val;
 
 %% Calibrate of the TX array
 % This script calibrates the TX-side timing and phase offsets. The TX under
-% calibration is sdr0, and the reference RX is sdr0.
+% calibration is sdr0, and the reference RX is sdr1.
 
 % Configure the RX number of samples, etc
 nFFT = 1024;
@@ -431,8 +383,8 @@ for expType=1:3
         txtd = txtd/m*4000;
         sdr0.send(txtd);
         
-        % Receive the signal from sdr0
-        rxtd = sdr0.recv(nread,nskip,ntimes);
+        % Receive the signal from the "helper" sdr1
+        rxtd = sdr1.recv(nread,nskip,ntimes);
         size(rxtd);
         
         for txIndex=1:sdr0.nch
@@ -478,7 +430,7 @@ for expType=1:3
     for txIndex=1:sdr0.nch
         
         % Fractional
-        l = maxPos(txIndex, :, :);
+        l = maxPos(txIndex, :, :) - maxPos(1, :, :);
         l = reshape(l, 1, []);
         
         if (expType == 1)
@@ -550,8 +502,11 @@ for expType=1:3
     end % txIndex
 end % expType
 
-sdr0.calTxDelay
-sdr0.calTxPhase
+% Stop the sdr0 transmissions and do a dummy read at sdr1
+txtd = zeros(nFFT, sdr0.nch);
+sdr0.send(txtd);
+pause(1);
+rxtd = sdr1.recv(nread, nskip, ntimes);
 
 % Clear workspace variables
 clear constellation expType iter maxVal nFFT niter rxtd scIndex;

@@ -81,7 +81,7 @@ classdef FullyDigital < matlab.System
             % (# of batch) * (samples per batch) * (# of channel) * (I/Q)
             nsamp = nbatch * nread * obj.nch * 2;
             
-            write(obj.socket, sprintf("+ %d %d %d", nread/2, nskip/2, nsamp*2));
+            write(obj.socket, sprintf("+ %d %d %d",  nread/2, nskip/2, nsamp*2));
             
             % Read data from the FPGA
             data = obj.fpga.recv(nsamp);

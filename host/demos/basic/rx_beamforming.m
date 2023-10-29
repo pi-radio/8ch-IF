@@ -1,4 +1,4 @@
-% In this demo, we assume that sdr0 is open, and is fully
+% In this demo, we assume that sdr0 and sdr1 open, and is fully
 % calibrated. Look at the calibration demo to make sure this is done. In
 % the minimum, the timing and phase offsets need to be calibrated.
 
@@ -29,7 +29,7 @@ txtd = txtd / m * 5000;
 refTxIndex = 1;
 txtdMod = zeros(nFFT, sdr0.nch);
 txtdMod(:, refTxIndex) = txtd;
-sdr0.send(txtdMod);
+sdr1.send(txtdMod);
 
 rxtd = sdr0.recv(nread, nskip, ntimes);
 rxtd = sdr0.applyCalRxArray(rxtd);
@@ -64,10 +64,10 @@ ylim([-15 0])
 
 % Stop transmitting and do a dummy read
 txtd = zeros(nFFT, sdr0.nch);
-sdr0.send(txtd);
+sdr1.send(txtd);
 sdr0.recv(nread, nskip, ntimes);
 
 % Clear workspace variables
 clear aoa aoas fd iaoa naoa p pArray refTxIndex td tdbf txtdMod;
-clear sdr0 sdr0 ans itimes m nFFT nread nskip ntimes rxIndex rxtd;
+clear ans itimes m nFFT nread nskip ntimes rxIndex rxtd;
 clear scIndex txfd txtd constellation scMax scMin;

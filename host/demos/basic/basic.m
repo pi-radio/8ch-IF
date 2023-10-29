@@ -22,8 +22,8 @@ sdr0.lo.configure('../../config/lmx_hedy_lamarr_55ghz.txt');
 % A channel ID of 10 refers to "all channels".
 % Otherwise channels are numbered 1 through 8.
 
-txChId = 7;
-rxChId = 3;
+txChId = 8;
+rxChId = 8;
 
 % Power down all the LTC5594 chips
 sdr0.ltc.configure(10, '../../config/ltc5594_pdn.txt');
@@ -44,14 +44,16 @@ sdr0.set_switches('off');
 
  %% Simple TX and RX test with a single channel
 
+clc;
 nFFT = 1024;	% number of FFT points
-txPower = 4000; % Do not exceed 30000
-scMin = 2;
-scMax = 2;
+txPower = 3000; % Do not exceed 30000
+scMin = 100;
+scMax = 100;
 constellation = [1+1j 1-1j -1+1j -1-1j];
 
 txtd = zeros(nFFT, sdr0.nch);       
-txfd = zeros(nFFT,sdr0.nch);
+txfd = zeros(nFFT, ...
+    sdr0.nch);
 
 for scIndex = scMin:scMax
     if scIndex == 0
@@ -74,22 +76,23 @@ nbatch = 100;	% num of batches
 
 rxtd = sdr0.recv(nFFT, nskip, nbatch);
 
-%% Channel Sounder
+% Channel Sounder
 
 rxtd = sdr0.recv(nFFT, nskip, nbatch);
 rxtd = rxtd(:, 1, rxChId);
 rxfd = fft(rxtd);
 figure(1); clf;
 
-for txChId = 1:8
+for txChId = 8:8
     corr_fd = txfd(:, txChId) .* conj(rxfd);
     corr_td = ifft(corr_fd);
     
     p = mag2db(abs(corr_td));
     subplot(4,2,txChId)
     plot(p);
-    ylim([60 120]);
+    %ylim([60 120]);
     grid on;
+    [val, pos] = max(p)
 end
 
 
