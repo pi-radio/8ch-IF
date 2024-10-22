@@ -76,7 +76,7 @@ classdef FullyDigital < matlab.System
             obj.disconnect();
         end
         
-        function data = recv(obj, nread, nskip, nbatch)
+        function data = recv(obj, nread, nskip, nbatch, toPlot)
             % Calculate the total number of samples to read:
             % (# of batch) * (samples per batch) * (# of channel) * (I/Q)
             nsamp = nbatch * nread * obj.nch * 2;
@@ -96,21 +96,23 @@ classdef FullyDigital < matlab.System
                 end
             end
             
-            % Plot the RX waveform for the first batch
-            figure(obj.figNum);
-            for rxIndex=1:obj.nch
-                subplot(8, 4, rxIndex+16);
-                plot(real(data(:,1,rxIndex)), 'r'); hold on;
-                plot(imag(data(:,1,rxIndex)), 'b'); hold off;
-                ylim([-35000 35000]);
-                grid on;
-                
-                n = size(data,1);
-                scs = linspace(-n/2, n/2-1, n);
-                subplot(8,4,rxIndex+24);
-                plot(scs, mag2db(abs(fftshift(fft(data(:,1,rxIndex))))));
-                ylim([40 160]);
-                grid on;
+            if (toPlot == 1)
+                % Plot the RX waveform for the first batch
+                figure(obj.figNum);
+                for rxIndex=1:obj.nch
+                    subplot(8, 4, rxIndex+16);
+                    plot(real(data(:,1,rxIndex)), 'r'); hold on;
+                    plot(imag(data(:,1,rxIndex)), 'b'); hold off;
+                    ylim([-35000 35000]);
+                    grid on;
+                    
+                    n = size(data,1);
+                    scs = linspace(-n/2, n/2-1, n);
+                    subplot(8,4,rxIndex+24);
+                    plot(scs, mag2db(abs(fftshift(fft(data(:,1,rxIndex))))));
+                    ylim([40 160]);
+                    grid on;
+                end
             end
         end
         

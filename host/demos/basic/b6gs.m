@@ -7,7 +7,7 @@ isDebug = false;		% print debug messages
 
 % Create a Fully Digital SDR
 sdr0 = piradio.sdr.FullyDigital('ip', ip, 'isDebug', isDebug, ...
-    'figNum', 100, 'name', 'fr1-01');
+    'figNum', 100, 'name', 'fr3-01');
 
 % Configure the RFSoC. Use the file corresponding to the desired frequency
 sdr0.fpga.configure('../../config/rfsoc.cfg');
@@ -51,7 +51,7 @@ sdr0.send(txtd);
 nskip = 1024*3; % skip ADC data
 nbatch = 10;	% num of batches
 
-freqs = ["./6p5GHz.sh", "./10GHz.sh", "./14GHz.sh", "./17GHz.sh"];
+freqs = ["6.5e9", "10.0e9", "14.0e9", "17.0e9"];
 nFreq = size(freqs, 2);
 
 niter = 1;
@@ -66,8 +66,8 @@ for iter = 1:niter
     for iFreq = 1:nFreq
 
         % Configure the Pi-Radio board frequency and receive
-        c = sprintf("ssh ubuntu@192.168.137.51 %s", freqs(iFreq));
-        system(c);
+        c = sprintf("http://192.168.137.51:5111/high_lo?freq=%s", freqs(iFreq));
+        fprintf(c)
 
     
         rxtd_orig = sdr0.recv(nFFT, nskip, nbatch, 0);
