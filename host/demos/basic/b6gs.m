@@ -23,7 +23,7 @@ rxChId = 1;
 
 clc;
 nFFT = 1024;	% number of FFT points
-txPower = 30000; % Do not exceed 30000
+txPower = 10000; % Do not exceed 30000
 scMin = -199;
 scMax = 200;
 constellation = [1+1j 1-1j -1+1j -1-1j];
@@ -48,18 +48,22 @@ sdr0.send(txtd);
 
 %% Receive data
 
+clc;
 nskip = 1024*3; % skip ADC data
-nbatch = 10;	% num of batches
+nbatch = 25;	% num of batches
 
-freqs = ["6.5e9", "10.0e9", "14.0e9", "17.0e9"];
+freqs = ["10.0e9", "14.0e9", "17.0e9", "21.7e9"];
+%freqs = ["6.5e9"];
+dc_i = ["0.183", "0.026", "0.009", "0.009"];
+dc_q = ["-0.053", "-0.001", "-0.080", "0.026"];
 nFreq = size(freqs, 2);
 
-niter = 1;
+niter = 10;
 figure(1); clf;
 
 % Set this to true when measuring the system response in cabled mode.
 % Set it to false, when running the channel sounder over the air
-measureSystemResponse = false;
+measureSystemResponse = false, ;
 systemResponses = ones(nFFT, nFreq);
 
 for iter = 1:niter
@@ -67,7 +71,17 @@ for iter = 1:niter
 
         % Configure the Pi-Radio board frequency and receive
         c = sprintf("http://192.168.137.51:5111/high_lo?freq=%s", freqs(iFreq));
-        fprintf(c)
+        fprintf(c); fprintf("\n");
+        str = urlread(c);
+
+        c = sprintf("http://192.168.137.51:5111/bias?chan=1&iq=I&v=%f", dc_i(iFreq));
+        fprintf(c); fprintf("\n");
+        str = urlread(c);
+
+        c = sprintf("http://192.168.137.51:5111/bias?chan=1&iq=Q&v=%f", dc_q(iFreq));
+        fprintf(c); fprintf("\n");
+        str = urlread(c);
+        pause(0.01)
 
     
         rxtd_orig = sdr0.recv(nFFT, nskip, nbatch, 0);
@@ -79,7 +93,13 @@ for iter = 1:niter
         % 1. Plot the Frequency domain
         subplot(4, 3, (iFreq-1)*3 + 1);
         plot(fftshift(mag2db(abs(rxfd))));
-        
+        ylim([50 100]);
+        xlim([1 nFFT]);
+        s = sprintf("Freq Domain: %s", freqs(iFreq));
+        title(s);
+        ax = gca;
+        ax.TitleFontSizeMultiplier = 2;
+
         % 2A. Measure the True Peak location. Use this in Phase 3.
         corr_fd = txfd(:, txChId) .* conj(rxfd);
         corr_td = ifft(corr_fd);
@@ -136,7 +156,12 @@ for iter = 1:niter
         corr_fd = rxfd_m .* conj(txfd_m) .* G_fd;
         corr_td = ifft(corr_fd);
         p = fftshift(mag2db(abs(corr_td)));
-        plot(p);        
+        plot(p);
+        s = sprintf("Channel Sounder: %s", freqs(iFreq));
+        ylim([50 120]);
+        title(s);
+        ax = gca;
+        ax.TitleFontSizeMultiplier = 2;
         grid on;
         
         % 3. Plot the Constellation
@@ -199,6 +224,10 @@ for iter = 1:niter
                 figure(1);
                 subplot(4, 3, (iFreq-1)*3 + 3);
                 plot(rxfd_equalized, '.');
+                s1 = sprintf("Data Constellation: %s", freqs(iFreq));
+                title(s1);
+                ax = gca;
+                ax.TitleFontSizeMultiplier = 2;
                 xlim([-1.5 1.5]);
                 ylim([-1.5 1.5]);
 
